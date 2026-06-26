@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>hihihiimdoris 本地健康日誌 (含管理員系統)</title>
+    <title>hihihiimdoris 雲端健康日誌</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
         .scroll-wheel-container {
             position: relative;
@@ -47,7 +49,7 @@
     <div id="authSection" class="max-w-md mx-auto my-12 bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
         <div class="text-center mb-6">
             <h1 id="authTitle" class="text-2xl font-bold text-slate-900">📝 建立健康帳戶</h1>
-            <p id="authSubtitle" class="text-xs text-slate-500 mt-1">帳戶與數據將安全儲存於您的本機瀏覽器中</p>
+            <p id="authSubtitle" class="text-xs text-slate-500 mt-1">帳戶與數據將即時同步至 Firebase 雲端資料庫</p>
         </div>
         <div class="space-y-4">
             <div>
@@ -73,14 +75,14 @@
     <div id="adminDashboard" class="max-w-6xl mx-auto space-y-6 hidden">
         <div class="bg-slate-900 text-white rounded-2xl shadow-xl p-6 flex justify-between items-center flex-wrap gap-4">
             <div>
-                <h1 class="text-2xl font-bold flex items-center gap-2">🔑 萬能管理員主控台 <span class="bg-rose-500 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-sans">Admin Mode</span></h1>
-                <p class="text-xs text-slate-400 mt-1">目前正在檢視這台裝置上的所有使用者名冊</p>
+                <h1 class="text-2xl font-bold flex items-center gap-2">🔑 萬能雲端管理員主控台 <span class="bg-rose-500 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-sans">Cloud Admin</span></h1>
+                <p class="text-xs text-slate-400 mt-1">目前正實時連接雲端，檢視所有跨裝置的使用者名冊</p>
             </div>
             <button onclick="handleLogout()" class="bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-xl transition-all">登出管理員</button>
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-100">
-            <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span class="w-1.5 h-6 bg-indigo-500 rounded-full"></span> 全裝置註冊用戶名單</h2>
+            <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span class="w-1.5 h-6 bg-indigo-500 rounded-full"></span> 全球雲端註冊用戶名單</h2>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left">
                     <thead class="bg-slate-50 text-slate-500">
@@ -108,9 +110,9 @@
                         📏 身高: 
                         <input type="number" id="dashboardHeightInput" step="0.1" onchange="updateUserHeight(this.value)" class="w-16 text-center font-bold text-emerald-600 bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-emerald-500 rounded mx-1"> cm
                     </span>
-                    <span id="adminViewingBadge" class="hidden text-xs bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded-lg">👁️ 管理員唯讀視察中</span>
+                    <span id="adminViewingBadge" class="hidden text-xs bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded-lg">👁️ 管理員雲端視察中</span>
                 </h1>
-                <p class="text-xs text-slate-500">🔒 本地數據保護已啟動</p>
+                <p class="text-xs text-slate-500">☁️ 雲端數據即時同步中</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-3">
@@ -212,7 +214,21 @@
     </div>
 
     <script>
-        // 🌟 萬能管理員金鑰設定處
+        // 🌟 妳的 Firebase 初始化設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyCERuzuN4FE14Tb54xE-FQUdbcVRVZ9jts",
+            authDomain: "health-log-6bdc7.firebaseapp.com",
+            databaseURL: "https://health-log-6bdc7-default-rtdb.firebaseio.com/", // 依據您的 projectId 自動生成 Realtime Database 雲端網址
+            projectId: "health-log-6bdc7",
+            storageBucket: "health-log-6bdc7.firebasestorage.app",
+            messagingSenderId: "13112727574",
+            appId: "1:13112727574:web:f1c32e3b1f4af5d526fd37",
+            measurementId: "G-NVX7N1S4YY"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // 👑 雲端管理員金鑰設定處
         const ADMIN_USERNAME = "admin";
         const ADMIN_PASSWORD = "8888";
 
@@ -223,7 +239,7 @@
         let isTempOnly = false; 
         let isRegisterMode = true; 
         let forceMobileLayout = false;
-        let isAdminViewing = false; // 是否是以管理員身份在查閱別人的帳號
+        let isAdminViewing = false; 
 
         // 🕒 初始化自訂滾軸選擇器數據
         const now = new Date();
@@ -301,118 +317,123 @@
             document.getElementById('authHeightField').style.display = isRegisterMode ? "block" : "none";
         }
 
+        // 🌟 雲端同步動態修改身高
         function updateUserHeight(newVal) {
-            if(isAdminViewing || !newVal || isNaN(newVal)) return; // 管理員模式下禁止修改人家身高
-            let users = JSON.parse(localStorage.getItem('local_health_users') || '{}');
-            if (users[currentUser]) {
-                userHeight = parseFloat(newVal);
-                if (typeof users[currentUser] === 'object') {
-                    users[currentUser].height = userHeight;
-                } else {
-                    users[currentUser] = { password: users[currentUser], height: userHeight };
-                }
-                localStorage.setItem('local_health_users', JSON.stringify(users));
-            }
+            if(isAdminViewing || !newVal || isNaN(newVal) || !currentUser) return;
+            userHeight = parseFloat(newVal);
+            // 同步更新 Firebase 雲端資料庫中的身高
+            database.ref('users/' + currentUser).update({
+                height: userHeight
+            });
         }
 
-        // 🔑 驗證系統
+        // 🔑 雲端帳密登入與註冊攔截系統
         function handleAuthSubmit() { 
             const name = document.getElementById('authName').value.trim(); 
             const password = document.getElementById('authPassword').value.trim(); 
             if (!name || !password) return alert('帳號與密碼皆為必填！'); 
             
-            // 🌟 優先攔截是否為管理員登入
+            // 優先攔截是否為跨裝置雲端管理員登入
             if (!isRegisterMode && name === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-                alert('👑 尊貴的管理員，歡迎回來！');
+                alert('👑 跨裝置雲端管理員大 Boss，歡迎回來！');
                 enterAdminDashboard();
                 return;
             }
-
-            let users = JSON.parse(localStorage.getItem('local_health_users') || '{}');
 
             if (isRegisterMode) { 
                 if (name === ADMIN_USERNAME) return alert('此保留帳號不可註冊！');
                 const height = document.getElementById('authHeight').value.trim();
                 if (!height) return alert('註冊時請輸入您的身高喔！');
-                if (users[name]) return alert('此帳號已被註冊！'); 
                 
-                users[name] = { password: password, height: parseFloat(height) };
-                localStorage.setItem('local_health_users', JSON.stringify(users));
-                
-                currentUser = name;
-                userHeight = parseFloat(height);
-                isAdminViewing = false;
-                alert('帳戶建立成功！直接為您登入儀表板 🎉'); 
-                enterDashboard();
+                // 檢查雲端資料庫該帳號是否已存在
+                database.ref('users/' + name).once('value', function(snapshot) {
+                    if (snapshot.exists()) {
+                        alert('此帳號已被註冊！換個名字試試看喔。');
+                    } else {
+                        // 雲端寫入全新帳戶資料
+                        database.ref('users/' + name).set({
+                            password: password,
+                            height: parseFloat(height)
+                        }).then(() => {
+                            currentUser = name;
+                            userHeight = parseFloat(height);
+                            isAdminViewing = false;
+                            alert('雲端帳戶建立成功！直接幫您跳轉至健康控制台 🎉'); 
+                            enterDashboard();
+                        });
+                    }
+                });
             } else { 
-                const userData = users[name];
-                if (!userData) return alert('帳號或密碼錯誤！');
-                
-                const savedPassword = (typeof userData === 'object') ? userData.password : userData;
-                const savedHeight = (typeof userData === 'object') ? userData.height : "160"; 
-
-                if (savedPassword !== password) return alert('帳號或密碼錯誤！'); 
-                
-                currentUser = name; 
-                userHeight = savedHeight; 
-                isAdminViewing = false;
-                enterDashboard(); 
+                // 雲端驗證登入
+                database.ref('users/' + name).once('value', function(snapshot) {
+                    if (!snapshot.exists()) {
+                        alert('帳號或密碼錯誤！');
+                        return;
+                    }
+                    const userData = snapshot.val();
+                    if (userData.password !== password) {
+                        alert('帳號或密碼錯誤！');
+                        return;
+                    }
+                    currentUser = name; 
+                    userHeight = userData.height || 160; 
+                    isAdminViewing = false;
+                    enterDashboard(); 
+                });
             } 
         }
 
-        // 進入管理員大後台
+        // 進入跨裝置管理員大後台
         function enterAdminDashboard() {
             document.getElementById('authSection').style.display = 'none';
             document.getElementById('adminDashboard').classList.remove('hidden');
             renderAdminUserList();
         }
 
-        // 渲染管理員表格名冊
+        // 從雲端撈出所有人名單做成名冊
         function renderAdminUserList() {
             const tbody = document.getElementById('adminUserTableBody');
-            let users = JSON.parse(localStorage.getItem('local_health_users') || '{}');
             
-            if (Object.keys(users).length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400 text-xs">目前裝置上還沒有任何常規用戶註冊喔</td></tr>`;
-                return;
-            }
+            database.ref('users').once('value', function(snapshot) {
+                const users = snapshot.val();
+                if (!users || Object.keys(users).length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400 text-xs">目前雲端上還沒有任何常規用戶註冊喔</td></tr>`;
+                    return;
+                }
 
-            tbody.innerHTML = Object.keys(users).map(name => {
-                const userData = users[name];
-                const savedPassword = (typeof userData === 'object') ? userData.password : userData;
-                const savedHeight = (typeof userData === 'object') ? userData.height : "--";
-                return `
-                <tr class="hover:bg-slate-50 transition-all">
-                    <td class="p-3 font-bold text-slate-700">👤 ${name}</td>
-                    <td class="p-3 font-mono text-slate-500">${savedPassword}</td>
-                    <td class="p-3 font-medium text-slate-600">${savedHeight} cm</td>
-                    <td class="p-3 text-center">
-                        <button onclick="adminViewUserLogs('${name}', '${savedHeight}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1.5 rounded-lg font-bold text-xs transition-all">👁️ 查看日誌與圖表</button>
-                    </td>
-                </tr>`;
-            }).join('');
+                tbody.innerHTML = Object.keys(users).map(name => {
+                    const userData = users[name];
+                    return `
+                    <tr class="hover:bg-slate-50 transition-all">
+                        <td class="p-3 font-bold text-slate-700">👤 ${name}</td>
+                        <td class="p-3 font-mono text-slate-500">${userData.password}</td>
+                        <td class="p-3 font-medium text-slate-600">${userData.height || '--'} cm</td>
+                        <td class="p-3 text-center">
+                            <button onclick="adminViewUserLogs('${name}', '${userData.height || 160}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1.5 rounded-lg font-bold text-xs transition-all">👁️ 查看日誌與圖表</button>
+                        </td>
+                    </tr>`;
+                }).join('');
+            });
         }
 
-        // 管理員免密碼直接調閱用戶資料
+        // 管理員免密碼直接從雲端調閱該用戶健康檔案
         function adminViewUserLogs(targetUser, targetHeight) {
             currentUser = targetUser;
             userHeight = targetHeight;
-            isAdminViewing = true; // 啟動管理員視察旗標
+            isAdminViewing = true; 
 
             document.getElementById('adminDashboard').classList.add('hidden');
             
-            // 調整控制台畫面元素 (隱藏輸入表單、隱藏刪除欄位、鎖死身高輸入框、顯示返回紐)
             document.getElementById('inputFormBlock').style.display = 'none';
-            document.getElementById('gridLayout').className = "flex flex-col gap-6"; // 強制單欄方便管理員看圖表
+            document.getElementById('gridLayout').className = "flex flex-col gap-6"; 
             document.getElementById('dashboardHeightInput').disabled = true;
             document.getElementById('adminBackBtn').classList.remove('hidden');
             document.getElementById('adminViewingBadge').classList.remove('hidden');
-            document.getElementById('thAction').style.display = 'none'; // 隱藏表格「操作」抬頭
+            document.getElementById('thAction').style.display = 'none'; 
 
             enterDashboard();
         }
 
-        // 從視察畫面返回管理員主頁
         function returnToAdminHome() {
             document.getElementById('mainDashboard').className = 'hidden';
             enterAdminDashboard();
@@ -423,14 +444,21 @@
             document.getElementById('dashboardHeightInput').value = userHeight; 
             document.getElementById('authSection').style.display = 'none'; 
             document.getElementById('mainDashboard').className = 'max-w-6xl mx-auto space-y-6'; 
-            fetchLocalData(); 
+            fetchCloudData(); 
         }
 
-        function fetchLocalData() { 
-            myLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
-            myLogs.sort((a,b) => new Date(b.timestamp.replace(/-/g, '/')) - new Date(a.timestamp.replace(/-/g, '/'))); 
-            updateTable(); 
-            renderChart(); 
+        // 從雲端即時載入體溫血壓紀錄
+        function fetchCloudData() { 
+            database.ref('logs/' + currentUser).on('value', function(snapshot) {
+                const data = snapshot.val();
+                myLogs = [];
+                if (data) {
+                    myLogs = Object.keys(data).map(key => data[key]);
+                }
+                myLogs.sort((a,b) => new Date(b.timestamp.replace(/-/g, '/')) - new Date(a.timestamp.replace(/-/g, '/'))); 
+                updateTable(); 
+                renderChart(); 
+            });
         }
         
         function setMode(tempOnly) { 
@@ -447,6 +475,7 @@
             metricsFields.style.pointerEvents = tempOnly ? "none" : "auto"; 
         }
         
+        // 上傳數據到雲端
         function saveRecord() {
             if(isAdminViewing) return;
             const sys = document.getElementById('sys').value;
@@ -462,8 +491,9 @@
 
             if (!temp) return alert("體溫是必填的喔！");
 
+            const logId = Date.now().toString();
             const newLog = {
-                id: Date.now().toString(), 
+                id: logId, 
                 timestamp: `${y}-${m}-${d} ${hh}:${mm}`,
                 weight: isTempOnly ? null : (weight ? parseFloat(weight) : null),
                 sys: isTempOnly ? null : (sys ? parseInt(sys) : null),
@@ -471,24 +501,21 @@
                 temp: parseFloat(temp)
             };
 
-            myLogs.unshift(newLog);
-            localStorage.setItem(`logs_${currentUser}`, JSON.stringify(myLogs));
-            
-            alert("數據已成功儲存！");
-            document.getElementById('sys').value = ''; 
-            document.getElementById('dia').value = ''; 
-            document.getElementById('temp').value = '';
-            document.getElementById('weight').value = '';
-            
-            fetchLocalData();
+            // 儲存至雲端 Firebase
+            database.ref('logs/' + currentUser + '/' + logId).set(newLog).then(() => {
+                alert("數據已成功上傳至雲端！");
+                document.getElementById('sys').value = ''; 
+                document.getElementById('dia').value = ''; 
+                document.getElementById('temp').value = '';
+                document.getElementById('weight').value = '';
+            });
         }
 
+        // 從雲端刪除紀錄
         function deleteLog(id) { 
             if(isAdminViewing) return;
-            if (confirm('確定要刪除這筆紀錄嗎？')) { 
-                myLogs = myLogs.filter(l => l.id !== id);
-                localStorage.setItem(`logs_${currentUser}`, JSON.stringify(myLogs));
-                fetchLocalData();
+            if (confirm('確定要從雲端永久刪除這筆紀錄嗎？')) { 
+                database.ref('logs/' + currentUser + '/' + id).remove();
             } 
         }
         
@@ -502,8 +529,6 @@
             tbody.innerHTML = myLogs.map(l => {
                 const weekday = getWeekdayStr(l.timestamp);
                 const weightStr = l.weight ? `${l.weight} kg` : '--';
-                
-                // 🌟 判斷是否為管理員視察模式，隱藏刪除按鈕
                 const actionTd = isAdminViewing ? '' : `<td class="p-3 text-center"><button onclick="deleteLog('${l.id}')" class="text-slate-300 hover:text-rose-500 transition-colors">刪除</button></td>`;
                 
                 return `
@@ -559,12 +584,16 @@
         }
         
         function handleLogout() { 
+            // 斷開 Firebase 監聽
+            if(currentUser) {
+                database.ref('logs/' + currentUser).off();
+            }
+
             currentUser = null; 
             userHeight = "";
-            isRegisterMode = false; // 登出後貼心切換到登入模式
+            isRegisterMode = false; 
             isAdminViewing = false;
 
-            // 還原所有介面設定
             document.getElementById('adminDashboard').classList.add('hidden');
             document.getElementById('mainDashboard').className = 'hidden'; 
             document.getElementById('adminBackBtn').classList.add('hidden');
@@ -573,15 +602,13 @@
             document.getElementById('dashboardHeightInput').disabled = false;
             document.getElementById('thAction').style.display = ''; 
             
-            // 回到手機/電腦格佈局
             document.getElementById('gridLayout').className = forceMobileLayout ? "flex flex-col gap-6" : "grid grid-cols-1 lg:grid-cols-3 gap-6";
 
-            // 清空輸入框並切到登入狀態
             document.getElementById('authSection').style.display = 'block'; 
             document.getElementById('authName').value = ''; 
             document.getElementById('authPassword').value = ''; 
             document.getElementById('authHeight').value = '';
-            toggleAuthMode(); // 呼叫這個讓它切到登入狀態
+            toggleAuthMode(); 
         }
     </script>
 </body>
