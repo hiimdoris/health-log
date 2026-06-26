@@ -9,17 +9,44 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
-        /* 隱藏原生網頁下拉箭頭，打造流暢的自訂上下滾輪選單 */
-        .scroll-select {
+        /* 🎨 強制將下拉選單變成可直接上下滾動的滾軸滾輪 */
+        .scroll-wheel-container {
+            position: relative;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 0.5rem;
+        }
+        .scroll-wheel-select {
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
-            scroll-snap-type: y mandatory;
-            text-align-last: center;
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: monospace;
+            font-size: 0.875rem;
+            color: #334155;
+            text-align: center;
+            cursor: pointer;
+            /* 關鍵：強制呈現多行並允許滾動 */
+            overflow-y: auto !important;
+            display: block !important;
         }
-        .scroll-select::-webkit-scrollbar { width: 4px; }
-        .scroll-select::-webkit-scrollbar-thumb { background: #10b981; border-radius: 99px; }
-        .scroll-select option { scroll-snap-align: start; padding: 6px 0; }
+        /* 隱藏討厭的滾動條，讓畫面像 App 一樣乾淨 */
+        .scroll-wheel-select::-webkit-scrollbar {
+            display: none;
+        }
+        .scroll-wheel-select option {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(241, 245, 249, 0.5);
+        }
+        .scroll-wheel-select option:checked {
+            background-color: #e6f4ea !important;
+            color: #059669;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body id="mainBody" class="bg-slate-50 min-h-screen py-6 px-4 text-base">
@@ -60,19 +87,29 @@
                 <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><span class="w-1.5 h-6 bg-emerald-500 rounded-full"></span> 錄入數據</h2>
                 
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-2">量測日期 (上下滑動/滾動選年、月、日)</label>
-                    <div class="grid grid-cols-3 gap-1 bg-slate-50 p-2 rounded-xl border border-slate-200 text-center font-mono">
-                        <select id="scrollYear" class="scroll-select bg-transparent outline-none text-sm p-1 h-24 overflow-y-auto" size="3" onchange="updateDays()"></select>
-                        <select id="scrollMonth" class="scroll-select bg-transparent outline-none text-sm p-1 h-24 overflow-y-auto" size="3" onchange="updateDays()"></select>
-                        <select id="scrollDay" class="scroll-select bg-transparent outline-none text-sm p-1 h-24 overflow-y-auto" size="3"></select>
+                    <label class="block text-xs font-bold text-slate-400 mb-2">量測日期 (免點開，請直接上下滾動選擇)</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="scroll-wheel-container">
+                            <select id="scrollYear" class="scroll-wheel-select" size="4" onchange="updateDays()"></select>
+                        </div>
+                        <div class="scroll-wheel-container">
+                            <select id="scrollMonth" class="scroll-wheel-select" size="4" onchange="updateDays()"></select>
+                        </div>
+                        <div class="scroll-wheel-container">
+                            <select id="scrollDay" class="scroll-wheel-select" size="4"></select>
+                        </div>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-2">量測時間 (上下滑動/滾動選時、分)</label>
-                    <div class="grid grid-cols-2 gap-1 bg-slate-50 p-2 rounded-xl border border-slate-200 text-center font-mono">
-                        <select id="scrollHour" class="scroll-select bg-transparent outline-none text-sm p-1 h-24 overflow-y-auto" size="3"></select>
-                        <select id="scrollMinute" class="scroll-select bg-transparent outline-none text-sm p-1 h-24 overflow-y-auto" size="3"></select>
+                    <label class="block text-xs font-bold text-slate-400 mb-2">量測時間 (免點開，請直接上下滾動選擇)</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="scroll-wheel-container">
+                            <select id="scrollHour" class="scroll-wheel-select" size="4"></select>
+                        </div>
+                        <div class="scroll-wheel-container">
+                            <select id="scrollMinute" class="scroll-wheel-select" size="4"></select>
+                        </div>
                     </div>
                 </div>
 
@@ -124,7 +161,7 @@
     </div>
 
     <script>
-        // ✅ 這裡已經完美放入妳剛剛給我的金鑰囉！不需要再手動修改了！
+        // 固定配置好妳的 Firebase 金鑰
         const firebaseConfig = {
             apiKey: "AIzaSyCERuzuN4FE14Tb54xE-FQUdbcVRVZ9jts",
             authDomain: "health-log-6bdc7.firebaseapp.com",
@@ -143,7 +180,7 @@
         const now = new Date();
         const currentYear = now.getFullYear();
         
-        // 填充年 (前後推兩年)
+        // 填充年
         const yearSelect = document.getElementById('scrollYear');
         for(let i = currentYear - 2; i <= currentYear + 2; i++) {
             yearSelect.options.add(new Option(i + "年", i));
@@ -157,7 +194,7 @@
         }
         monthSelect.value = now.getMonth() + 1;
 
-        // 根據年月份動態更新天數的函數
+        // 動態計算天數
         function updateDays() {
             const daySelect = document.getElementById('scrollDay');
             const prevVal = daySelect.value || now.getDate();
@@ -187,7 +224,7 @@
         }
         minSelect.value = now.getMinutes();
 
-        // 📝 取得星期幾文字的輔助工具
+        // 📝 自動判斷並產生「星期幾」文字
         function getWeekdayStr(dateStr) {
             const weekdays = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
             const cleanDate = dateStr.split(' ')[0];
@@ -195,16 +232,16 @@
             return weekdays[d.getDay()] || "";
         }
 
-        // 🔄 切換註冊與登入模式
+        // 🔄 切換註冊與登入
         function toggleAuthMode() { 
             isRegisterMode = !isRegisterMode; 
             document.getElementById('authTitle').innerText = isRegisterMode ? "📝 建立健康帳戶" : "🔐 登入雲端日誌"; 
             document.getElementById('primaryAuthBtn').innerText = isRegisterMode ? "確認註冊雲端帳號" : "安全登入系統"; 
             document.getElementById('authSwitchBtn').innerText = isRegisterMode ? "前往登入" : "前往註冊";
-            document.getElementById('authSwitchText').innerText = isRegisterMode ? "已經有帳號了？" : "還擺脫不了沒帳號？";
+            document.getElementById('authSwitchText').innerText = isRegisterMode ? "已經有帳號了？" : "還沒有帳號嗎？";
         }
 
-        // 🔑 雲端自由註冊與登入邏輯
+        // 🔑 雲端驗證邏輯
         async function handleAuthSubmit() { 
             if (!checkFirebase()) return; 
             const name = document.getElementById('authName').value.trim(); 
