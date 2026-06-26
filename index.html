@@ -63,7 +63,7 @@
                 <label class="block text-xs font-bold text-slate-400 mb-1">密碼</label>
                 <input type="password" id="authPassword" placeholder="請輸入密碼" class="w-full rounded-xl border-slate-200 border p-3 text-sm outline-none focus:border-emerald-500 bg-slate-50">
             </div>
-            <button id="primaryAuthBtn" onclick="handleAuthSubmit()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-700 shadow-md transition-all text-sm mt-2">確認註冊雲端帳號</button>
+            <button id="authPrimaryBtn" onclick="handleAuthSubmit()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-700 shadow-md transition-all text-sm mt-2">確認註冊雲端帳號</button>
             <div class="text-center text-xs text-slate-500 mt-4">
                 <span id="authSwitchText">已經有帳號了？</span>
                 <button onclick="toggleAuthMode()" id="authSwitchBtn" class="text-emerald-600 font-bold underline ml-1">前往登入</button>
@@ -144,80 +144,4 @@
                 </div>
 
                 <div id="bpFields" class="space-y-2">
-                    <label class="block text-xs font-medium text-slate-400">血壓 (mmHg)</label>
-                    <div class="grid grid-cols-2 gap-3">
-                        <input type="number" id="sys" placeholder="高壓" class="w-full rounded-xl border-slate-200 border p-3 text-base font-bold outline-none bg-white">
-                        <input type="number" id="dia" placeholder="低壓" class="w-full rounded-xl border-slate-200 border p-3 text-base font-bold outline-none bg-white">
-                    </div>
-                </div>
-
-                <div class="space-y-2">
-                    <label class="block text-xs font-medium text-slate-400">體溫 (°C)</label>
-                    <input type="number" id="temp" step="0.1" placeholder="例如：36.5" class="w-full rounded-xl border-slate-200 border p-3 text-xl font-bold text-emerald-600 outline-none bg-white">
-                </div>
-                
-                <button onclick="saveRecord()" class="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl hover:bg-emerald-700 shadow-md transition-all mt-4">儲存並同步到雲端</button>
-            </div>
-
-            <div id="dataDisplayArea" class="lg:col-span-2 space-y-6">
-                <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-100">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><span class="w-1.5 h-6 bg-rose-500 rounded-full"></span> 雲端趨勢分析圖</h2>
-                        <button onclick="exportToGoogleSheets()" class="text-emerald-700 text-xs font-bold bg-emerald-50 px-3 py-2 rounded-lg hover:bg-emerald-100 transition-all">💚 匯出至 Google 試算表 (CSV)</button>
-                    </div>
-                    <div class="h-80 w-full"><canvas id="healthChart"></canvas></div>
-                </div>
-                <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-100">
-                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span class="w-1.5 h-6 bg-amber-500 rounded-full"></span> 雲端歷史日誌</h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left">
-                            <thead class="bg-slate-50 text-slate-500">
-                                <tr>
-                                    <th class="p-3 font-bold">時間</th>
-                                    <th class="p-3 font-bold">身高 / 體重</th>
-                                    <th class="p-3 font-bold">血壓 (高/低)</th>
-                                    <th class="p-3 font-bold">體溫</th>
-                                    <th class="p-3 font-bold text-center">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="logTableBody" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                        <div id="noDataText" class="text-center py-10 text-slate-400 text-xs hidden">雲端尚無數據，請開始記錄</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // 🔒 固定配置好妳的 Firebase 金鑰
-        const firebaseConfig = {
-            apiKey: "AIzaSyCERuzuN4FE14Tb54xE-FQUdbcVRVZ9jts",
-            authDomain: "health-log-6bdc7.firebaseapp.com",
-            projectId: "health-log-6bdc7",
-            storageBucket: "health-log-6bdc7.firebasestorage.app",
-            messagingSenderId: "13112727574",
-            appId: "1:13112727574:web:f1c32e3b1f4af5d526fd37",
-            measurementId: "G-NVX7N1S4YY"
-        };
-
-        let db = null; let currentUser = null; let myLogs = []; let healthChart = null; let isTempOnly = false; let isRegisterMode = true;
-        let forceMobileLayout = false;
-
-        try { if (firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf("換成") === -1) { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); } } catch (e) { console.error(e); }
-        function checkFirebase() { if (!db) { alert("❌ Firebase 尚未配置完全喔！"); return false; } return true; }
-        
-        // 🕒 初始化自訂滾軸選擇器數據
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        
-        // 填充年
-        const yearSelect = document.getElementById('scrollYear');
-        for(let i = currentYear - 2; i <= currentYear + 2; i++) {
-            yearSelect.options.add(new Option(i + "年", i));
-        }
-        yearSelect.value = currentYear;
-
-        // 填充月
-        const monthSelect = document.getElementById('scrollMonth');
-        for(let i = 1; i <= 12; i++) {
+                    <label class="block text-xs font-medium text-slate-40
