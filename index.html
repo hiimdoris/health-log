@@ -26,8 +26,6 @@
             border: none;
             outline: none;
             font-family: monospace;
-            font-size: 0.875rem;
-            color: #334155;
             text-align: center;
             cursor: pointer;
             /* 關鍵：強制呈現多行並允許滾動 */
@@ -49,7 +47,7 @@
         }
     </style>
 </head>
-<body id="mainBody" class="bg-slate-50 min-h-screen py-6 px-4 text-base">
+<body id="mainBody" class="bg-slate-50 min-h-screen py-6 px-4 text-base transition-all duration-200">
 
     <div id="authSection" class="max-w-md mx-auto my-12 bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
         <div class="text-center mb-6">
@@ -74,20 +72,36 @@
     </div>
 
     <div id="mainDashboard" class="max-w-6xl mx-auto space-y-6 hidden">
+        
         <div class="bg-white rounded-2xl shadow-sm p-6 flex flex-wrap justify-between items-center gap-4 border border-slate-100">
             <div>
                 <h1 class="text-2xl font-bold text-slate-900 mb-1">🩺 <span id="userNameDisplay"></span> 的雲端儀表板</h1>
                 <p class="text-xs text-slate-500">🔒 您的數據已進行安全加密同步</p>
             </div>
-            <button onclick="handleLogout()" class="text-slate-400 hover:text-rose-600 text-sm font-medium transition-colors">登出帳號</button>
+            
+            <div class="flex flex-wrap items-center gap-3">
+                <button id="layoutToggleBtn" onclick="toggleLayoutMode()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl transition-all">
+                    🖥️ 切換至手機單欄模式
+                </button>
+                
+                <div class="bg-slate-100 p-1 rounded-xl flex gap-1 text-xs font-bold">
+                    <button id="fontSize-sm" onclick="changeFontSize('text-sm')" class="px-3 py-1 rounded-lg text-slate-500">A-</button>
+                    <button id="fontSize-base" onclick="changeFontSize('text-base')" class="px-3 py-1 rounded-lg bg-white text-emerald-600 shadow-sm">A</button>
+                    <button id="fontSize-lg" onclick="changeFontSize('text-lg')" class="px-3 py-1 rounded-lg text-slate-500">A+</button>
+                </div>
+
+                <div class="h-4 w-px bg-slate-200 mx-1"></div>
+                <button onclick="handleLogout()" class="text-slate-400 hover:text-rose-600 text-sm font-medium transition-colors">登出</button>
+            </div>
         </div>
+        
         <div id="gridLayout" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-100 h-fit space-y-6">
                 <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><span class="w-1.5 h-6 bg-emerald-500 rounded-full"></span> 錄入數據</h2>
                 
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-2">量測日期 (免點開，請直接上下滾動選擇)</label>
+                    <label class="block text-xs font-bold text-slate-400 mb-2">量測日期 (上下滾動選年、月、日)</label>
                     <div class="grid grid-cols-3 gap-2">
                         <div class="scroll-wheel-container">
                             <select id="scrollYear" class="scroll-wheel-select" size="4" onchange="updateDays()"></select>
@@ -102,7 +116,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-2">量測時間 (免點開，請直接上下滾動選擇)</label>
+                    <label class="block text-xs font-bold text-slate-400 mb-2">量測時間 (上下滾動選時、分)</label>
                     <div class="grid grid-cols-2 gap-2">
                         <div class="scroll-wheel-container">
                             <select id="scrollHour" class="scroll-wheel-select" size="4"></select>
@@ -117,6 +131,18 @@
                     <button id="modeFull" onclick="setMode(false)" class="bg-white text-emerald-600 py-2 rounded-lg shadow-sm">完整模式</button>
                     <button id="modeTempOnly" onclick="setMode(true)" class="text-slate-500 py-2 rounded-lg">僅記體溫</button>
                 </div>
+
+                <div id="bodyMetricsFields" class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <label class="block text-xs font-medium text-slate-400">身高 (cm)</label>
+                        <input type="number" id="height" step="0.1" placeholder="公分" class="w-full rounded-xl border-slate-200 border p-3 text-base font-bold outline-none bg-white">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-medium text-slate-400">體重 (kg)</label>
+                        <input type="number" id="weight" step="0.1" placeholder="公斤" class="w-full rounded-xl border-slate-200 border p-3 text-base font-bold outline-none bg-white">
+                    </div>
+                </div>
+
                 <div id="bpFields" class="space-y-2">
                     <label class="block text-xs font-medium text-slate-400">血壓 (mmHg)</label>
                     <div class="grid grid-cols-2 gap-3">
@@ -124,14 +150,16 @@
                         <input type="number" id="dia" placeholder="低壓" class="w-full rounded-xl border-slate-200 border p-3 text-base font-bold outline-none bg-white">
                     </div>
                 </div>
+
                 <div class="space-y-2">
                     <label class="block text-xs font-medium text-slate-400">體溫 (°C)</label>
                     <input type="number" id="temp" step="0.1" placeholder="例如：36.5" class="w-full rounded-xl border-slate-200 border p-3 text-xl font-bold text-emerald-600 outline-none bg-white">
                 </div>
+                
                 <button onclick="saveRecord()" class="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl hover:bg-emerald-700 shadow-md transition-all mt-4">儲存並同步到雲端</button>
             </div>
 
-            <div class="lg:col-span-2 space-y-6">
+            <div id="dataDisplayArea" class="lg:col-span-2 space-y-6">
                 <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-100">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><span class="w-1.5 h-6 bg-rose-500 rounded-full"></span> 雲端趨勢分析圖</h2>
@@ -146,6 +174,7 @@
                             <thead class="bg-slate-50 text-slate-500">
                                 <tr>
                                     <th class="p-3 font-bold">時間</th>
+                                    <th class="p-3 font-bold">身高 / 體重</th>
                                     <th class="p-3 font-bold">血壓 (高/低)</th>
                                     <th class="p-3 font-bold">體溫</th>
                                     <th class="p-3 font-bold text-center">操作</th>
@@ -161,7 +190,7 @@
     </div>
 
     <script>
-        // 固定配置好妳的 Firebase 金鑰
+        // 🔒 固定配置好妳的 Firebase 金鑰
         const firebaseConfig = {
             apiKey: "AIzaSyCERuzuN4FE14Tb54xE-FQUdbcVRVZ9jts",
             authDomain: "health-log-6bdc7.firebaseapp.com",
@@ -173,6 +202,8 @@
         };
 
         let db = null; let currentUser = null; let myLogs = []; let healthChart = null; let isTempOnly = false; let isRegisterMode = true;
+        let forceMobileLayout = false;
+
         try { if (firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf("換成") === -1) { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); } } catch (e) { console.error(e); }
         function checkFirebase() { if (!db) { alert("❌ Firebase 尚未配置完全喔！"); return false; } return true; }
         
@@ -190,138 +221,3 @@
         // 填充月
         const monthSelect = document.getElementById('scrollMonth');
         for(let i = 1; i <= 12; i++) {
-            monthSelect.options.add(new Option(i + "月", i));
-        }
-        monthSelect.value = now.getMonth() + 1;
-
-        // 動態計算天數
-        function updateDays() {
-            const daySelect = document.getElementById('scrollDay');
-            const prevVal = daySelect.value || now.getDate();
-            daySelect.innerHTML = "";
-            const year = parseInt(yearSelect.value);
-            const month = parseInt(monthSelect.value);
-            const daysInMonth = new Date(year, month, 0).getDate();
-            
-            for(let i = 1; i <= daysInMonth; i++) {
-                daySelect.options.add(new Option(i + "日", i));
-            }
-            daySelect.value = prevVal <= daysInMonth ? prevVal : daysInMonth;
-        }
-        updateDays();
-
-        // 填充時
-        const hourSelect = document.getElementById('scrollHour');
-        for(let i = 0; i <= 23; i++) {
-            hourSelect.options.add(new Option(i.toString().padStart(2, '0') + "時", i));
-        }
-        hourSelect.value = now.getHours();
-
-        // 填充分
-        const minSelect = document.getElementById('scrollMinute');
-        for(let i = 0; i <= 59; i++) {
-            minSelect.options.add(new Option(i.toString().padStart(2, '0') + "分", i));
-        }
-        minSelect.value = now.getMinutes();
-
-        // 📝 自動判斷並產生「星期幾」文字
-        function getWeekdayStr(dateStr) {
-            const weekdays = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
-            const cleanDate = dateStr.split(' ')[0];
-            const d = new Date(cleanDate);
-            return weekdays[d.getDay()] || "";
-        }
-
-        // 🔄 切換註冊與登入
-        function toggleAuthMode() { 
-            isRegisterMode = !isRegisterMode; 
-            document.getElementById('authTitle').innerText = isRegisterMode ? "📝 建立健康帳戶" : "🔐 登入雲端日誌"; 
-            document.getElementById('primaryAuthBtn').innerText = isRegisterMode ? "確認註冊雲端帳號" : "安全登入系統"; 
-            document.getElementById('authSwitchBtn').innerText = isRegisterMode ? "前往登入" : "前往註冊";
-            document.getElementById('authSwitchText').innerText = isRegisterMode ? "已經有帳號了？" : "還沒有帳號嗎？";
-        }
-
-        // 🔑 雲端驗證邏輯
-        async function handleAuthSubmit() { 
-            if (!checkFirebase()) return; 
-            const name = document.getElementById('authName').value.trim(); 
-            const password = document.getElementById('authPassword').value.trim(); 
-            if (!name || !password) return alert('帳號與密碼皆為必填！'); 
-            try { 
-                const userRef = db.collection('users').doc(name); 
-                const doc = await userRef.get(); 
-                if (isRegisterMode) { 
-                    if (doc.exists) return alert('此帳號已被註冊！'); 
-                    await userRef.set({ password: password }); 
-                    alert('帳戶建立成功！請前往登入。'); 
-                    toggleAuthMode(); 
-                } else { 
-                    if (!doc.exists || doc.data().password !== password) return alert('帳號或密碼錯誤！'); 
-                    currentUser = name; 
-                    enterDashboard(); 
-                } 
-            } catch (err) { alert("連線失敗: " + err.message); } 
-        }
-
-        function enterDashboard() { document.getElementById('userNameDisplay').innerText = currentUser; document.getElementById('authSection').className = 'hidden'; document.getElementById('mainDashboard').className = 'max-w-6xl mx-auto space-y-6'; fetchCloudData(); }
-        function fetchCloudData() { if (!db) return; db.collection('users').doc(currentUser).collection('logs').onSnapshot((snapshot) => { myLogs = []; snapshot.forEach(doc => { myLogs.push({ id: doc.id, ...doc.data() }); }); myLogs.sort((a,b) => new Date(b.timestamp.replace(/-/g, '/')) - new Date(a.timestamp.replace(/-/g, '/'))); updateTable(); renderChart(); }); }
-        function setMode(tempOnly) { isTempOnly = tempOnly; document.getElementById('modeFull').className = tempOnly ? "text-slate-500 py-2 rounded-lg" : "bg-white text-emerald-600 py-2 rounded-lg shadow-sm"; document.getElementById('modeTempOnly').className = tempOnly ? "bg-white text-emerald-600 py-2 rounded-lg shadow-sm" : "text-slate-500 py-2 rounded-lg"; document.getElementById('bpFields').style.opacity = tempOnly ? "0.3" : "1"; document.getElementById('bpFields').style.pointerEvents = tempOnly ? "none" : "auto"; }
-        
-        async function saveRecord() {
-            if (!checkFirebase()) return;
-            const sys = document.getElementById('sys').value;
-            const dia = document.getElementById('dia').value;
-            const temp = document.getElementById('temp').value;
-            
-            const y = yearSelect.value;
-            const m = monthSelect.value.padStart(2, '0');
-            const d = document.getElementById('scrollDay').value.padStart(2, '0');
-            const hh = hourSelect.value.padStart(2, '0');
-            const mm = minSelect.value.padStart(2, '0');
-
-            if (!temp) return alert("體溫是必填的喔！");
-
-            const newLog = {
-                timestamp: `${y}-${m}-${d} ${hh}:${mm}`,
-                sys: isTempOnly ? null : (sys ? parseInt(sys) : null),
-                dia: isTempOnly ? null : (dia ? parseInt(dia) : null),
-                temp: parseFloat(temp)
-            };
-
-            try {
-                await db.collection('users').doc(currentUser).collection('logs').add(newLog);
-                alert("數據已即時同步到雲端！");
-                document.getElementById('sys').value = ''; document.getElementById('dia').value = ''; document.getElementById('temp').value = '';
-            } catch (err) { alert("儲存失敗: " + err.message); }
-        }
-
-        async function deleteLog(id) { if (!checkFirebase()) return; if (confirm('確定要自雲端刪除這筆紀錄嗎？')) { await db.collection('users').doc(currentUser).collection('logs').doc(id).delete(); } }
-        
-        function updateTable() {
-            const tbody = document.getElementById('logTableBody');
-            if (myLogs.length === 0) {
-                document.getElementById('noDataText').classList.remove('hidden');
-                tbody.innerHTML = ''; return;
-            }
-            document.getElementById('noDataText').classList.add('hidden');
-            tbody.innerHTML = myLogs.map(l => {
-                const weekday = getWeekdayStr(l.timestamp);
-                return `
-                <tr class="hover:bg-slate-50 transition-all">
-                    <td class="p-3 font-mono text-xs">
-                        <div class="font-bold text-slate-700">${l.timestamp.split(' ')[0]} <span class="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] ml-1 font-sans">${weekday}</span></div>
-                        <div class="text-slate-400 mt-0.5">${l.timestamp.split(' ')[1]}</div>
-                    </td>
-                    <td class="p-3 font-bold">${l.sys ? `<span class="text-rose-500">${l.sys}</span> / <span class="text-blue-500">${l.dia}</span>` : '<span class="text-slate-300">--</span>'}</td>
-                    <td class="p-3 font-bold text-emerald-600">${l.temp} °C</td>
-                    <td class="p-3 text-center"><button onclick="deleteLog('${l.id}')" class="text-slate-300 hover:text-rose-500 transition-colors">刪除</button></td>
-                </tr>`;
-            }).join('');
-        }
-
-        function renderChart() { const ctx = document.getElementById('healthChart').getContext('2d'); const chartLogs = [...myLogs].sort((a,b) => new Date(a.timestamp.replace(/-/g, '/')) - new Date(b.timestamp.replace(/-/g, '/'))); if (healthChart) healthChart.destroy(); healthChart = new Chart(ctx, { type: 'line', data: { labels: chartLogs.map(l => l.timestamp.split(' ')[0].slice(5) + ' ' + l.timestamp.split(' ')[1]), datasets: [ { label: '收縮壓', data: chartLogs.map(l => l.sys), borderColor: '#ef4444', tension: 0.3, yAxisID: 'yBP', spanGaps: true }, { label: '舒張壓', data: chartLogs.map(l => l.dia), borderColor: '#3b82f6', tension: 0.3, yAxisID: 'yBP', spanGaps: true }, { label: '體溫', data: chartLogs.map(l => l.temp), borderColor: '#10b981', tension: 0.3, yAxisID: 'yTemp' } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { yBP: { type: 'linear', position: 'left', min: 40, max: 200 }, yTemp: { type: 'linear', position: 'right', min: 35, max: 41, grid: { drawOnChartArea: false } } } } }); }
-        function exportToGoogleSheets() { if (myLogs.length === 0) return alert("目前還沒有雲端數據可以產生報表喔！"); let csvContent = "\uFEFF時間,星期,收縮壓 (高壓),舒張壓 (低壓),體溫 (°C)\n"; myLogs.forEach(l => { csvContent += `${l.timestamp},${getWeekdayStr(l.timestamp)},${l.sys || ''},${l.dia || ''},${l.temp}\n`; }); const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `健康數據表_${currentUser}.csv`; link.click(); }
-        function handleLogout() { currentUser = null; isRegisterMode = true; document.getElementById('authSection').className = 'max-w-md mx-auto my-12 bg-white rounded-3xl shadow-xl p-8 border border-slate-100'; document.getElementById('mainDashboard').className = 'hidden'; document.getElementById('authName').value = ''; document.getElementById('authPassword').value = ''; document.getElementById('authTitle').innerText = "📝 建立健康帳戶"; document.getElementById('primaryAuthBtn').innerText = "確認註冊雲端帳號"; }
-    </script>
-</body>
-</html>
