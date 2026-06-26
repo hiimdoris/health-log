@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>hihihiimdoris 健康日誌</title>
+    <title>hihihiimdoris 本地健康日誌</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -274,7 +274,6 @@
             });
         }
 
-        // 🔄 完全無痛、不卡死的切換模式 🚀
         function toggleAuthMode() { 
             isRegisterMode = !isRegisterMode; 
             document.getElementById('authTitle').innerText = isRegisterMode ? "📝 建立健康帳戶" : "🔐 登入帳誌"; 
@@ -283,13 +282,11 @@
             document.getElementById('authSwitchText').innerText = isRegisterMode ? "已經有帳號了？" : "還沒有帳號嗎？";
         }
 
-        // 🔑 本地儲存驗證邏輯 (取代 Firebase)
         function handleAuthSubmit() { 
             const name = document.getElementById('authName').value.trim(); 
             const password = document.getElementById('authPassword').value.trim(); 
             if (!name || !password) return alert('帳號與密碼皆為必填！'); 
             
-            // 從本地獲取使用者清單
             let users = JSON.parse(localStorage.getItem('local_health_users') || '{}');
 
             if (isRegisterMode) { 
@@ -313,7 +310,6 @@
         }
 
         function fetchLocalData() { 
-            // 讀取該使用者存在本地的歷史紀錄
             myLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
             myLogs.sort((a,b) => new Date(b.timestamp.replace(/-/g, '/')) - new Date(a.timestamp.replace(/-/g, '/'))); 
             updateTable(); 
@@ -350,7 +346,7 @@
             if (!temp) return alert("體溫是必填的喔！");
 
             const newLog = {
-                id: Date.now().toString(), // 使用時間戳記當作本地 ID
+                id: Date.now().toString(), 
                 timestamp: `${y}-${m}-${d} ${hh}:${mm}`,
                 height: isTempOnly ? null : (height ? parseFloat(height) : null),
                 weight: isTempOnly ? null : (weight ? parseFloat(weight) : null),
