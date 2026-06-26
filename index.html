@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* 🎨 強制將下拉選單變成可直接上下滾動的滾軸滾輪 */
         .scroll-wheel-container {
             position: relative;
             background: #f8fafc;
@@ -71,6 +70,34 @@
         </div>
     </div>
 
+    <div id="adminDashboard" class="max-w-6xl mx-auto space-y-6 hidden">
+        <div class="bg-slate-900 text-white rounded-2xl shadow-xl p-6 flex justify-between items-center flex-wrap gap-4">
+            <div>
+                <h1 class="text-2xl font-bold flex items-center gap-2">🔑 萬能管理員主控台 <span class="bg-rose-500 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-sans">Admin Mode</span></h1>
+                <p class="text-xs text-slate-400 mt-1">目前正在檢視這台裝置上的所有使用者名冊</p>
+            </div>
+            <button onclick="handleLogout()" class="bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-xl transition-all">登出管理員</button>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-100">
+            <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span class="w-1.5 h-6 bg-indigo-500 rounded-full"></span> 全裝置註冊用戶名單</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 text-slate-500">
+                        <tr>
+                            <th class="p-3 font-bold">使用者帳號</th>
+                            <th class="p-3 font-bold">登入密碼</th>
+                            <th class="p-3 font-bold">設定身高 (cm)</th>
+                            <th class="p-3 font-bold text-center">後台操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminUserTableBody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
     <div id="mainDashboard" class="max-w-6xl mx-auto space-y-6 hidden">
         
         <div class="bg-white rounded-2xl shadow-sm p-6 flex flex-wrap justify-between items-center gap-4 border border-slate-100">
@@ -81,11 +108,16 @@
                         📏 身高: 
                         <input type="number" id="dashboardHeightInput" step="0.1" onchange="updateUserHeight(this.value)" class="w-16 text-center font-bold text-emerald-600 bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-emerald-500 rounded mx-1"> cm
                     </span>
+                    <span id="adminViewingBadge" class="hidden text-xs bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded-lg">👁️ 管理員唯讀視察中</span>
                 </h1>
                 <p class="text-xs text-slate-500">🔒 本地數據保護已啟動</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-3">
+                <button id="adminBackBtn" onclick="returnToAdminHome()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all">
+                    ⬅️ 返回管理員名單
+                </button>
+
                 <button id="layoutToggleBtn" onclick="toggleLayoutMode()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl transition-all">
                     🖥️ 切換至手機單欄模式
                 </button>
@@ -103,33 +135,23 @@
         
         <div id="gridLayout" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-100 h-fit space-y-6">
+            <div id="inputFormBlock" class="bg-white rounded-2xl shadow-sm p-6 border border-slate-100 h-fit space-y-6">
                 <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><span class="w-1.5 h-6 bg-emerald-500 rounded-full"></span> 錄入數據</h2>
                 
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-2">量測日期 (上下滾動選年、月、日)</label>
+                    <label class="block text-xs font-bold text-slate-400 mb-2">量測日期</label>
                     <div class="grid grid-cols-3 gap-2">
-                        <div class="scroll-wheel-container">
-                            <select id="scrollYear" class="scroll-wheel-select" size="4" onchange="updateDays()"></select>
-                        </div>
-                        <div class="scroll-wheel-container">
-                            <select id="scrollMonth" class="scroll-wheel-select" size="4" onchange="updateDays()"></select>
-                        </div>
-                        <div class="scroll-wheel-container">
-                            <select id="scrollDay" class="scroll-wheel-select" size="4"></select>
-                        </div>
+                        <div class="scroll-wheel-container"><select id="scrollYear" class="scroll-wheel-select" size="4" onchange="updateDays()"></select></div>
+                        <div class="scroll-wheel-container"><select id="scrollMonth" class="scroll-wheel-select" size="4" onchange="updateDays()"></select></div>
+                        <div class="scroll-wheel-container"><select id="scrollDay" class="scroll-wheel-select" size="4"></select></div>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-2">量測時間 (上下滾動選時、分)</label>
+                    <label class="block text-xs font-bold text-slate-400 mb-2">量測時間</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <div class="scroll-wheel-container">
-                            <select id="scrollHour" class="scroll-wheel-select" size="4"></select>
-                        </div>
-                        <div class="scroll-wheel-container">
-                            <select id="scrollMinute" class="scroll-wheel-select" size="4"></select>
-                        </div>
+                        <div class="scroll-wheel-container"><select id="scrollHour" class="scroll-wheel-select" size="4"></select></div>
+                        <div class="scroll-wheel-container"><select id="scrollMinute" class="scroll-wheel-select" size="4"></select></div>
                     </div>
                 </div>
 
@@ -177,7 +199,7 @@
                                     <th class="p-3 font-bold">體重</th>
                                     <th class="p-3 font-bold">血壓 (收縮壓/舒張壓)</th>
                                     <th class="p-3 font-bold">體溫</th>
-                                    <th class="p-3 font-bold text-center">操作</th>
+                                    <th class="p-3 font-bold text-center" id="thAction">操作</th>
                                 </tr>
                             </thead>
                             <tbody id="logTableBody" class="divide-y divide-slate-100"></tbody>
@@ -190,28 +212,29 @@
     </div>
 
     <script>
+        // 🌟 萬能管理員金鑰設定處
+        const ADMIN_USERNAME = "admin";
+        const ADMIN_PASSWORD = "8888";
+
         let currentUser = null; 
         let userHeight = ""; 
         let myLogs = []; 
         let healthChart = null; 
         let isTempOnly = false; 
-        let isRegisterMode = true; // 預設是註冊模式
+        let isRegisterMode = true; 
         let forceMobileLayout = false;
+        let isAdminViewing = false; // 是否是以管理員身份在查閱別人的帳號
 
         // 🕒 初始化自訂滾軸選擇器數據
         const now = new Date();
         const currentYear = now.getFullYear();
         
         const yearSelect = document.getElementById('scrollYear');
-        for(let i = currentYear - 2; i <= currentYear + 2; i++) {
-            yearSelect.options.add(new Option(i + "年", i));
-        }
+        for(let i = currentYear - 2; i <= currentYear + 2; i++) { yearSelect.options.add(new Option(i + "年", i)); }
         yearSelect.value = currentYear;
 
         const monthSelect = document.getElementById('scrollMonth');
-        for(let i = 1; i <= 12; i++) {
-            monthSelect.options.add(new Option(i + "月", i));
-        }
+        for(let i = 1; i <= 12; i++) { monthSelect.options.add(new Option(i + "月", i)); }
         monthSelect.value = now.getMonth() + 1;
 
         function updateDays() {
@@ -222,23 +245,17 @@
             const month = parseInt(monthSelect.value);
             const daysInMonth = new Date(year, month, 0).getDate();
             
-            for(let i = 1; i <= daysInMonth; i++) {
-                daySelect.options.add(new Option(i + "日", i));
-            }
+            for(let i = 1; i <= daysInMonth; i++) { daySelect.options.add(new Option(i + "日", i)); }
             daySelect.value = prevVal <= daysInMonth ? prevVal : daysInMonth;
         }
         updateDays();
 
         const hourSelect = document.getElementById('scrollHour');
-        for(let i = 0; i <= 23; i++) {
-            hourSelect.options.add(new Option(i.toString().padStart(2, '0') + "時", i));
-        }
+        for(let i = 0; i <= 23; i++) { hourSelect.options.add(new Option(i.toString().padStart(2, '0') + "時", i)); }
         hourSelect.value = now.getHours();
 
         const minSelect = document.getElementById('scrollMinute');
-        for(let i = 0; i <= 59; i++) {
-            minSelect.options.add(new Option(i.toString().padStart(2, '0') + "分", i));
-        }
+        for(let i = 0; i <= 59; i++) { minSelect.options.add(new Option(i.toString().padStart(2, '0') + "分", i)); }
         minSelect.value = now.getMinutes();
 
         function getWeekdayStr(dateStr) {
@@ -271,28 +288,21 @@
             const sizes = ['text-sm', 'text-base', 'text-lg'];
             sizes.forEach(s => {
                 const btn = document.getElementById(`fontSize-${s.replace('text-', '')}`);
-                if (s === sizeClass) {
-                    btn.className = "px-3 py-1 rounded-lg bg-white text-emerald-600 shadow-sm";
-                } else {
-                    btn.className = "px-3 py-1 rounded-lg text-slate-500";
-                }
+                btn.className = (s === sizeClass) ? "px-3 py-1 rounded-lg bg-white text-emerald-600 shadow-sm" : "px-3 py-1 rounded-lg text-slate-500";
             });
         }
 
-        // 🔄 切換註冊與登入畫面（乾淨修復版）
         function toggleAuthMode() { 
             isRegisterMode = !isRegisterMode; 
             document.getElementById('authTitle').innerText = isRegisterMode ? "📝 建立健康帳戶" : "🔐 登入系統"; 
             document.getElementById('authPrimaryBtn').innerText = isRegisterMode ? "確認註冊帳號" : "安全登入系統"; 
             document.getElementById('authSwitchBtn').innerText = isRegisterMode ? "前往登入" : "前往註冊";
             document.getElementById('authSwitchText').innerText = isRegisterMode ? "已經有帳號了？" : "還沒有帳號嗎？";
-            
-            // 確保切換時，身高的顯示狀態完全乾淨
             document.getElementById('authHeightField').style.display = isRegisterMode ? "block" : "none";
         }
 
         function updateUserHeight(newVal) {
-            if(!newVal || isNaN(newVal)) return;
+            if(isAdminViewing || !newVal || isNaN(newVal)) return; // 管理員模式下禁止修改人家身高
             let users = JSON.parse(localStorage.getItem('local_health_users') || '{}');
             if (users[currentUser]) {
                 userHeight = parseFloat(newVal);
@@ -305,27 +315,33 @@
             }
         }
 
-        // 🔑 驗證與自動一鍵跳轉
+        // 🔑 驗證系統
         function handleAuthSubmit() { 
             const name = document.getElementById('authName').value.trim(); 
             const password = document.getElementById('authPassword').value.trim(); 
             if (!name || !password) return alert('帳號與密碼皆為必填！'); 
             
+            // 🌟 優先攔截是否為管理員登入
+            if (!isRegisterMode && name === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+                alert('👑 尊貴的管理員，歡迎回來！');
+                enterAdminDashboard();
+                return;
+            }
+
             let users = JSON.parse(localStorage.getItem('local_health_users') || '{}');
 
             if (isRegisterMode) { 
+                if (name === ADMIN_USERNAME) return alert('此保留帳號不可註冊！');
                 const height = document.getElementById('authHeight').value.trim();
                 if (!height) return alert('註冊時請輸入您的身高喔！');
                 if (users[name]) return alert('此帳號已被註冊！'); 
                 
-                // 儲存新帳號
                 users[name] = { password: password, height: parseFloat(height) };
                 localStorage.setItem('local_health_users', JSON.stringify(users));
                 
-                // 🌟 直接賦值登入變數
                 currentUser = name;
                 userHeight = parseFloat(height);
-                
+                isAdminViewing = false;
                 alert('帳戶建立成功！直接為您登入儀表板 🎉'); 
                 enterDashboard();
             } else { 
@@ -339,14 +355,73 @@
                 
                 currentUser = name; 
                 userHeight = savedHeight; 
+                isAdminViewing = false;
                 enterDashboard(); 
             } 
+        }
+
+        // 進入管理員大後台
+        function enterAdminDashboard() {
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('adminDashboard').classList.remove('hidden');
+            renderAdminUserList();
+        }
+
+        // 渲染管理員表格名冊
+        function renderAdminUserList() {
+            const tbody = document.getElementById('adminUserTableBody');
+            let users = JSON.parse(localStorage.getItem('local_health_users') || '{}');
+            
+            if (Object.keys(users).length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400 text-xs">目前裝置上還沒有任何常規用戶註冊喔</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = Object.keys(users).map(name => {
+                const userData = users[name];
+                const savedPassword = (typeof userData === 'object') ? userData.password : userData;
+                const savedHeight = (typeof userData === 'object') ? userData.height : "--";
+                return `
+                <tr class="hover:bg-slate-50 transition-all">
+                    <td class="p-3 font-bold text-slate-700">👤 ${name}</td>
+                    <td class="p-3 font-mono text-slate-500">${savedPassword}</td>
+                    <td class="p-3 font-medium text-slate-600">${savedHeight} cm</td>
+                    <td class="p-3 text-center">
+                        <button onclick="adminViewUserLogs('${name}', '${savedHeight}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1.5 rounded-lg font-bold text-xs transition-all">👁️ 查看日誌與圖表</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // 管理員免密碼直接調閱用戶資料
+        function adminViewUserLogs(targetUser, targetHeight) {
+            currentUser = targetUser;
+            userHeight = targetHeight;
+            isAdminViewing = true; // 啟動管理員視察旗標
+
+            document.getElementById('adminDashboard').classList.add('hidden');
+            
+            // 調整控制台畫面元素 (隱藏輸入表單、隱藏刪除欄位、鎖死身高輸入框、顯示返回紐)
+            document.getElementById('inputFormBlock').style.display = 'none';
+            document.getElementById('gridLayout').className = "flex flex-col gap-6"; // 強制單欄方便管理員看圖表
+            document.getElementById('dashboardHeightInput').disabled = true;
+            document.getElementById('adminBackBtn').classList.remove('hidden');
+            document.getElementById('adminViewingBadge').classList.remove('hidden');
+            document.getElementById('thAction').style.display = 'none'; // 隱藏表格「操作」抬頭
+
+            enterDashboard();
+        }
+
+        // 從視察畫面返回管理員主頁
+        function returnToAdminHome() {
+            document.getElementById('mainDashboard').className = 'hidden';
+            enterAdminDashboard();
         }
 
         function enterDashboard() { 
             document.getElementById('userNameDisplay').innerText = currentUser; 
             document.getElementById('dashboardHeightInput').value = userHeight; 
-            document.getElementById('authSection').style.display = 'none'; // 徹底隱藏登入區
+            document.getElementById('authSection').style.display = 'none'; 
             document.getElementById('mainDashboard').className = 'max-w-6xl mx-auto space-y-6'; 
             fetchLocalData(); 
         }
@@ -359,13 +434,13 @@
         }
         
         function setMode(tempOnly) { 
+            if(isAdminViewing) return;
             isTempOnly = tempOnly; 
             document.getElementById('modeFull').className = tempOnly ? "text-slate-500 py-2 rounded-lg" : "bg-white text-emerald-600 py-2 rounded-lg shadow-sm"; 
             document.getElementById('modeTempOnly').className = tempOnly ? "bg-white text-emerald-600 py-2 rounded-lg shadow-sm" : "text-slate-500 py-2 rounded-lg"; 
             
             const bpFields = document.getElementById('bpFields');
             const metricsFields = document.getElementById('bodyMetricsFields');
-            
             bpFields.style.opacity = tempOnly ? "0.3" : "1"; 
             bpFields.style.pointerEvents = tempOnly ? "none" : "auto"; 
             metricsFields.style.opacity = tempOnly ? "0.3" : "1"; 
@@ -373,6 +448,7 @@
         }
         
         function saveRecord() {
+            if(isAdminViewing) return;
             const sys = document.getElementById('sys').value;
             const dia = document.getElementById('dia').value;
             const temp = document.getElementById('temp').value;
@@ -408,6 +484,7 @@
         }
 
         function deleteLog(id) { 
+            if(isAdminViewing) return;
             if (confirm('確定要刪除這筆紀錄嗎？')) { 
                 myLogs = myLogs.filter(l => l.id !== id);
                 localStorage.setItem(`logs_${currentUser}`, JSON.stringify(myLogs));
@@ -426,6 +503,9 @@
                 const weekday = getWeekdayStr(l.timestamp);
                 const weightStr = l.weight ? `${l.weight} kg` : '--';
                 
+                // 🌟 判斷是否為管理員視察模式，隱藏刪除按鈕
+                const actionTd = isAdminViewing ? '' : `<td class="p-3 text-center"><button onclick="deleteLog('${l.id}')" class="text-slate-300 hover:text-rose-500 transition-colors">刪除</button></td>`;
+                
                 return `
                 <tr class="hover:bg-slate-50 transition-all">
                     <td class="p-3 font-mono text-xs">
@@ -435,7 +515,7 @@
                     <td class="p-3 font-medium text-slate-600">${weightStr}</td>
                     <td class="p-3 font-bold">${l.sys ? `<span class="text-rose-500">${l.sys}</span> / <span class="text-blue-500">${l.dia}</span>` : '<span class="text-slate-300">--</span>'}</td>
                     <td class="p-3 font-bold text-emerald-600">${l.temp} °C</td>
-                    <td class="p-3 text-center"><button onclick="deleteLog('${l.id}')" class="text-slate-300 hover:text-rose-500 transition-colors">刪除</button></td>
+                    ${actionTd}
                 </tr>`;
             }).join('');
         }
@@ -481,15 +561,27 @@
         function handleLogout() { 
             currentUser = null; 
             userHeight = "";
-            isRegisterMode = true; 
-            document.getElementById('authSection').style.display = 'block'; // 重新顯示登入框
+            isRegisterMode = false; // 登出後貼心切換到登入模式
+            isAdminViewing = false;
+
+            // 還原所有介面設定
+            document.getElementById('adminDashboard').classList.add('hidden');
             document.getElementById('mainDashboard').className = 'hidden'; 
+            document.getElementById('adminBackBtn').classList.add('hidden');
+            document.getElementById('adminViewingBadge').classList.add('hidden');
+            document.getElementById('inputFormBlock').style.display = 'block';
+            document.getElementById('dashboardHeightInput').disabled = false;
+            document.getElementById('thAction').style.display = ''; 
+            
+            // 回到手機/電腦格佈局
+            document.getElementById('gridLayout').className = forceMobileLayout ? "flex flex-col gap-6" : "grid grid-cols-1 lg:grid-cols-3 gap-6";
+
+            // 清空輸入框並切到登入狀態
+            document.getElementById('authSection').style.display = 'block'; 
             document.getElementById('authName').value = ''; 
             document.getElementById('authPassword').value = ''; 
             document.getElementById('authHeight').value = '';
-            document.getElementById('authTitle').innerText = "📝 建立健康帳戶"; 
-            document.getElementById('authPrimaryBtn').innerText = "確認註冊帳號"; 
-            document.getElementById('authHeightField').style.display = "block";
+            toggleAuthMode(); // 呼叫這個讓它切到登入狀態
         }
     </script>
 </body>
