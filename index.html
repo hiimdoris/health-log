@@ -59,6 +59,462 @@
                 <label class="block text-xs font-bold text-slate-400 mb-1">密碼</label>
                 <input type="password" id="authPassword" placeholder="請輸入密碼" class="w-full rounded-xl border-slate-200 border p-3 text-sm outline-none focus:border-emerald-500 bg-slate-50">
             </div>
+            <div id="authHeightField">
+                <label class="block text-xs font-bold text-slate-400 mb-1">初始身高 (cm)</label>
+                <input type="number" id="authHeight" step="0.1" placeholder="請輸入身高（公分）" class="w-full rounded-xl border-slate-200 border p-3 text-sm outline-none focus:border-emerald-500 bg-slate-50">
+            </div>
+            <button id="authPrimaryBtn" onclick="handleAuthSubmit()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-700 shadow-md transition-all text-sm mt-2">確認註冊帳號</button>
+            <div class="text-center text-xs text-slate-500 mt-4">
+                <span id="authSwitchText">已經有帳號了？</span>
+                <button onclick="toggleAuthMode()" id="authSwitchBtn" class="text-emerald-600 font-bold underline ml-1">前往登入</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainDashboard" class="max-w-6xl mx-auto space-y-6 hidden">
+        
+        <div class="bg-white rounded-2xl shadow-sm p-6 flex flex-wrap justify-between items-center gap-4 border border-slate-100">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 mb-1 flex flex-wrap items-center gap-2">
+                    🩺 <span id="userNameDisplay"></span> 的健康儀表板 
+                    <span class="text-sm font-normal text-slate-400 flex items-center bg-slate-50 px-2 py-1 rounded-xl border border-slate-200">
+                        📏 身高: 
+                        <input type="number" id="dashboardHeightInput" step="0.1" onchange="updateUserHeight(this.value)" class="w-16 text-center font-bold text-emerald-600 bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-emerald-500 rounded mx-1"> cm
+                    </span>
+                </h1>
+                <p class="text-xs text-slate-500">🔒 本地數據保護已啟動</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-3">
+                <button id="layoutToggleBtn" onclick="toggleLayoutMode()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl transition-all">
+                    🖥️ 切換至手機單欄模式
+                </button>
+                
+                <div class="bg-slate-100 p-1 rounded-xl flex gap-1 text-xs font-bold">
+                    <button id="fontSize-sm" onclick="changeFontSize('text-sm')" class="px-3 py-1 rounded-lg text-slate-500">A-</button>
+                    <button id="fontSize-base" onclick="changeFontSize('text-base')" class="px-3 py-1 rounded-lg bg-white text-emerald-600 shadow-sm">A</button>
+                    <button id="fontSize-lg" onclick="changeFontSize('text-lg')" class="px-3 py-1 rounded-lg text-slate-500">A+</button>
+                </div>
+
+                <div class="h-4 w-px bg-slate-200 mx-1"></div>
+                <button onclick="handleLogout()" class="text-slate-400 hover:text-rose-600 text-sm font-medium transition-colors">登出</button>
+            </div>
+        </div>
+        
+        <div id="gridLayout" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-100 h-fit space-y-6">
+                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><span class="w-1.5 h-6 bg-emerald-500 rounded-full"></span> 錄入數據</h2>
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-2">量測日期 (上下滾動選年、月、日)</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="scroll-wheel-container">
+                            <select id="scrollYear" class="scroll-wheel-select" size="4" onchange="updateDays()"></select>
+                        </div>
+                        <div class="scroll-wheel-container">
+                            <select id="scrollMonth" class="scroll-wheel-select" size="4" onchange="updateDays()"></select>
+                        </div>
+                        <div class="scroll-wheel-container">
+                            <select id="scrollDay" class="scroll-wheel-select" size="4"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-2">量測時間 (上下滾動選時、分)</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="scroll-wheel-container">
+                            <select id="scrollHour" class="scroll-wheel-select" size="4"></select>
+                        </div>
+                        <div class="scroll-wheel-container">
+                            <select id="scrollMinute" class="scroll-wheel-select" size="4"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl text-xs text-center font-bold">
+                    <button id="modeFull" onclick="setMode(false)" class="bg-white text-emerald-600 py-2 rounded-lg shadow-sm">完整模式</button>
+                    <button id="modeTempOnly" onclick="setMode(true)" class="text-slate-500 py-2 rounded-lg">僅記體溫</button>
+                </div>
+
+                <div id="bodyMetricsFields" class="space-y-1">
+                    <label class="block text-xs font-medium text-slate-400">體重 (kg)</label>
+                    <input type="number" id="weight" step="0.1" placeholder="公斤" class="w-full rounded-xl border-slate-200 border p-3 text-base font-bold outline-none bg-white">
+                </div>
+
+                <div id="bpFields" class="space-y-2">
+                    <label class="block text-xs font-medium text-slate-400">血壓 (mmHg)</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="number" id="sys" placeholder="收縮壓(高壓)" class="w-full rounded-xl border-slate-200 border p-3 text-base font-bold outline-none bg-white">
+                        <input type="number" id="dia" placeholder="舒張壓(低壓)" class="w-full rounded-xl border-slate-200 border p-3 text-base font-bold outline-none bg-white">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-medium text-slate-400">體溫 (°C)</label>
+                    <input type="number" id="temp" step="0.1" placeholder="例如：36.5" class="w-full rounded-xl border-slate-200 border p-3 text-xl font-bold text-emerald-600 outline-none bg-white">
+                </div>
+                
+                <button onclick="saveRecord()" class="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl hover:bg-emerald-700 shadow-md transition-all mt-4">儲存紀錄</button>
+            </div>
+
+            <div id="dataDisplayArea" class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-100">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><span class="w-1.5 h-6 bg-rose-500 rounded-full"></span> 趨勢分析圖</h2>
+                        <button onclick="exportToCSV()" class="text-emerald-700 text-xs font-bold bg-emerald-50 px-3 py-2 rounded-lg hover:bg-emerald-100 transition-all">💚 匯出至 Excel (CSV)</button>
+                    </div>
+                    <div class="h-80 w-full"><canvas id="healthChart"></canvas></div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-100">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span class="w-1.5 h-6 bg-amber-500 rounded-full"></span> 歷史日誌</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-slate-500">
+                                <tr>
+                                    <th class="p-3 font-bold">時間</th>
+                                    <th class="p-3 font-bold">體重</th>
+                                    <th class="p-3 font-bold">血壓 (收縮壓/舒張壓)</th>
+                                    <th class="p-3 font-bold">體溫</th>
+                                    <th class="p-3 font-bold text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                        <div id="noDataText" class="text-center py-10 text-slate-400 text-xs hidden">尚無數據，請開始記錄</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null; 
+        let userHeight = ""; 
+        let myLogs = []; 
+        let healthChart = null; 
+        let isTempOnly = false; 
+        let isRegisterMode = true;
+        let forceMobileLayout = false;
+
+        // 🕒 初始化自訂滾軸選擇器數據
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        
+        const yearSelect = document.getElementById('scrollYear');
+        for(let i = currentYear - 2; i <= currentYear + 2; i++) {
+            yearSelect.options.add(new Option(i + "年", i));
+        }
+        yearSelect.value = currentYear;
+
+        const monthSelect = document.getElementById('scrollMonth');
+        for(let i = 1; i <= 12; i++) {
+            monthSelect.options.add(new Option(i + "月", i));
+        }
+        monthSelect.value = now.getMonth() + 1;
+
+        function updateDays() {
+            const daySelect = document.getElementById('scrollDay');
+            const prevVal = daySelect.value || now.getDate();
+            daySelect.innerHTML = "";
+            const year = parseInt(yearSelect.value);
+            const month = parseInt(monthSelect.value);
+            const daysInMonth = new Date(year, month, 0).getDate();
+            
+            for(let i = 1; i <= daysInMonth; i++) {
+                daySelect.options.add(new Option(i + "日", i));
+            }
+            daySelect.value = prevVal <= daysInMonth ? prevVal : daysInMonth;
+        }
+        updateDays();
+
+        const hourSelect = document.getElementById('scrollHour');
+        for(let i = 0; i <= 23; i++) {
+            hourSelect.options.add(new Option(i.toString().padStart(2, '0') + "時", i));
+        }
+        hourSelect.value = now.getHours();
+
+        const minSelect = document.getElementById('scrollMinute');
+        for(let i = 0; i <= 59; i++) {
+            minSelect.options.add(new Option(i.toString().padStart(2, '0') + "分", i));
+        }
+        minSelect.value = now.getMinutes();
+
+        function getWeekdayStr(dateStr) {
+            const weekdays = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+            const d = new Date(dateStr.split(' ')[0]);
+            return weekdays[d.getDay()] || "";
+        }
+
+        function toggleLayoutMode() {
+            forceMobileLayout = !forceMobileLayout;
+            const gridLayout = document.getElementById('gridLayout');
+            const dataArea = document.getElementById('dataDisplayArea');
+            const toggleBtn = document.getElementById('layoutToggleBtn');
+            
+            if (forceMobileLayout) {
+                gridLayout.className = "flex flex-col gap-6";
+                dataArea.className = "space-y-6 w-full";
+                toggleBtn.innerText = "🖥️ 切換至電腦寬螢幕模式";
+            } else {
+                gridLayout.className = "grid grid-cols-1 lg:grid-cols-3 gap-6";
+                dataArea.className = "lg:col-span-2 space-y-6";
+                toggleBtn.innerText = "📱 切換至手機單欄模式";
+            }
+        }
+
+        function changeFontSize(sizeClass) {
+            const body = document.getElementById('mainBody');
+            body.className = body.className.replace(/text-(sm|base|lg)/g, sizeClass);
+            
+            const sizes = ['text-sm', 'text-base', 'text-lg'];
+            sizes.forEach(s => {
+                const btn = document.getElementById(`fontSize-${s.replace('text-', '')}`);
+                if (s === sizeClass) {
+                    btn.className = "px-3 py-1 rounded-lg bg-white text-emerald-600 shadow-sm";
+                } else {
+                    btn.className = "px-3 py-1 rounded-lg text-slate-500";
+                }
+            });
+        }
+
+        function toggleAuthMode() { 
+            isRegisterMode = !isRegisterMode; 
+            document.getElementById('authTitle').innerText = isRegisterMode ? "📝 建立健康帳戶" : "🔐 登入系統"; 
+            document.getElementById('authPrimaryBtn').innerText = isRegisterMode ? "確認註冊帳號" : "安全登入系統"; 
+            document.getElementById('authSwitchBtn').innerText = isRegisterMode ? "前往登入" : "前往註冊";
+            document.getElementById('authSwitchText').innerText = isRegisterMode ? "已經有帳號了？" : "還沒有帳號嗎？";
+            document.getElementById('authHeightField').style.display = isRegisterMode ? "block" : "none";
+        }
+
+        // 🌟 允許在主畫面修改身高的功能
+        function updateUserHeight(newVal) {
+            if(!newVal || isNaN(newVal)) return;
+            let users = JSON.parse(localStorage.getItem('local_health_users') || '{}');
+            if (users[currentUser]) {
+                userHeight = parseFloat(newVal);
+                if (typeof users[currentUser] === 'object') {
+                    users[currentUser].height = userHeight;
+                } else {
+                    users[currentUser] = { password: users[currentUser], height: userHeight };
+                }
+                localStorage.setItem('local_health_users', JSON.stringify(users));
+            }
+        }
+
+        // 🔑 本地儲存驗證與快速跳轉邏輯
+        function handleAuthSubmit() { 
+            const name = document.getElementById('authName').value.trim(); 
+            const password = document.getElementById('authPassword').value.trim(); 
+            if (!name || !password) return alert('帳號與密碼皆為必填！'); 
+            
+            let users = JSON.parse(localStorage.getItem('local_health_users') || '{}');
+
+            if (isRegisterMode) { 
+                const height = document.getElementById('authHeight').value.trim();
+                if (!height) return alert('註冊時請輸入您的身高喔！');
+                if (users[name]) return alert('此帳號已被註冊！'); 
+                
+                // 1. 存進資料庫
+                users[name] = { password: password, height: parseFloat(height) };
+                localStorage.setItem('local_health_users', JSON.stringify(users));
+                
+                // 🌟 2. 註冊完直接幫她塞入變數，一秒跳轉下一個主畫面！
+                currentUser = name;
+                userHeight = parseFloat(height);
+                alert('帳戶建立成功！即將直接為您登入儀表板 🚀'); 
+                enterDashboard();
+            } else { 
+                const userData = users[name];
+                if (!userData) return alert('帳號或密碼錯誤！');
+                
+                const savedPassword = (typeof userData === 'object') ? userData.password : userData;
+                const savedHeight = (typeof userData === 'object') ? userData.height : "160"; 
+
+                if (savedPassword !== password) return alert('帳號或密碼錯誤！'); 
+                
+                currentUser = name; 
+                userHeight = savedHeight; 
+                enterDashboard(); 
+            } 
+        }
+
+        function enterDashboard() { 
+            document.getElementById('userNameDisplay').innerText = currentUser; 
+            document.getElementById('dashboardHeightInput').value = userHeight; // 把身高放入輸入框
+            document.getElementById('authSection').className = 'hidden'; 
+            document.getElementById('mainDashboard').className = 'max-w-6xl mx-auto space-y-6'; 
+            fetchLocalData(); 
+        }
+
+        function fetchLocalData() { 
+            myLogs = JSON.parse(localStorage.getItem(`logs_${currentUser}`) || '[]');
+            myLogs.sort((a,b) => new Date(b.timestamp.replace(/-/g, '/')) - new Date(a.timestamp.replace(/-/g, '/'))); 
+            updateTable(); 
+            renderChart(); 
+        }
+        
+        function setMode(tempOnly) { 
+            isTempOnly = tempOnly; 
+            document.getElementById('modeFull').className = tempOnly ? "text-slate-500 py-2 rounded-lg" : "bg-white text-emerald-600 py-2 rounded-lg shadow-sm"; 
+            document.getElementById('modeTempOnly').className = tempOnly ? "bg-white text-emerald-600 py-2 rounded-lg shadow-sm" : "text-slate-500 py-2 rounded-lg"; 
+            
+            const bpFields = document.getElementById('bpFields');
+            const metricsFields = document.getElementById('bodyMetricsFields');
+            
+            bpFields.style.opacity = tempOnly ? "0.3" : "1"; 
+            bpFields.style.pointerEvents = tempOnly ? "none" : "auto"; 
+            metricsFields.style.opacity = tempOnly ? "0.3" : "1"; 
+            metricsFields.style.pointerEvents = tempOnly ? "none" : "auto"; 
+        }
+        
+        function saveRecord() {
+            const sys = document.getElementById('sys').value;
+            const dia = document.getElementById('dia').value;
+            const temp = document.getElementById('temp').value;
+            const weight = document.getElementById('weight').value;
+            
+            const y = yearSelect.value;
+            const m = monthSelect.value.padStart(2, '0');
+            const d = document.getElementById('scrollDay').value.padStart(2, '0');
+            const hh = hourSelect.value.padStart(2, '0');
+            const mm = minSelect.value.padStart(2, '0');
+
+            if (!temp) return alert("體溫是必填的喔！");
+
+            const newLog = {
+                id: Date.now().toString(), 
+                timestamp: `${y}-${m}-${d} ${hh}:${mm}`,
+                weight: isTempOnly ? null : (weight ? parseFloat(weight) : null),
+                sys: isTempOnly ? null : (sys ? parseInt(sys) : null),
+                dia: isTempOnly ? null : (dia ? parseInt(dia) : null),
+                temp: parseFloat(temp)
+            };
+
+            myLogs.unshift(newLog);
+            localStorage.setItem(`logs_${currentUser}`, JSON.stringify(myLogs));
+            
+            alert("數據已成功儲存！");
+            document.getElementById('sys').value = ''; 
+            document.getElementById('dia').value = ''; 
+            document.getElementById('temp').value = '';
+            document.getElementById('weight').value = '';
+            
+            fetchLocalData();
+        }
+
+        function deleteLog(id) { 
+            if (confirm('確定要刪除這筆紀錄嗎？')) { 
+                myLogs = myLogs.filter(l => l.id !== id);
+                localStorage.setItem(`logs_${currentUser}`, JSON.stringify(myLogs));
+                fetchLocalData();
+            } 
+        }
+        
+        function updateTable() {
+            const tbody = document.getElementById('logTableBody');
+            if (myLogs.length === 0) {
+                document.getElementById('noDataText').classList.remove('hidden');
+                tbody.innerHTML = ''; return;
+            }
+            document.getElementById('noDataText').classList.add('hidden');
+            tbody.innerHTML = myLogs.map(l => {
+                const weekday = getWeekdayStr(l.timestamp);
+                const weightStr = l.weight ? `${l.weight} kg` : '--';
+                
+                return `
+                <tr class="hover:bg-slate-50 transition-all">
+                    <td class="p-3 font-mono text-xs">
+                        <div class="font-bold text-slate-700">${l.timestamp.split(' ')[0]} <span class="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] ml-1 font-sans">${weekday}</span></div>
+                        <div class="text-slate-400 mt-0.5">${l.timestamp.split(' ')[1]}</div>
+                    </td>
+                    <td class="p-3 font-medium text-slate-600">${weightStr}</td>
+                    <td class="p-3 font-bold">${l.sys ? `<span class="text-rose-500">${l.sys}</span> / <span class="text-blue-500">${l.dia}</span>` : '<span class="text-slate-300">--</span>'}</td>
+                    <td class="p-3 font-bold text-emerald-600">${l.temp} °C</td>
+                    <td class="p-3 text-center"><button onclick="deleteLog('${l.id}')" class="text-slate-300 hover:text-rose-500 transition-colors">刪除</button></td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderChart() { 
+            const ctx = document.getElementById('healthChart').getContext('2d'); 
+            const chartLogs = [...myLogs].sort((a,b) => new Date(a.timestamp.replace(/-/g, '/')) - new Date(b.timestamp.replace(/-/g, '/'))); 
+            if (healthChart) healthChart.destroy(); 
+            healthChart = new Chart(ctx, { 
+                type: 'line', 
+                data: { 
+                    labels: chartLogs.map(l => l.timestamp.split(' ')[0].slice(5) + ' ' + l.timestamp.split(' ')[1]), 
+                    datasets: [ 
+                        { label: '收縮壓', data: chartLogs.map(l => l.sys), borderColor: '#ef4444', tension: 0.3, yAxisID: 'yBP', spanGaps: true }, 
+                        { label: '舒張壓', data: chartLogs.map(l => l.dia), borderColor: '#3b82f6', tension: 0.3, yAxisID: 'yBP', spanGaps: true }, 
+                        { label: '體溫', data: chartLogs.map(l => l.temp), borderColor: '#10b981', tension: 0.3, yAxisID: 'yTemp' } 
+                    ] 
+                }, 
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    scales: { 
+                        yBP: { type: 'linear', position: 'left', min: 40, max: 200 }, 
+                        yTemp: { type: 'linear', position: 'right', min: 35, max: 41, grid: { drawOnChartArea: false } } 
+                    } 
+                } 
+            }); 
+        }
+        
+        function exportToCSV() { 
+            if (myLogs.length === 0) return alert("目前還沒有數據可以產生報表喔！"); 
+            let csvContent = "\uFEFF時間,星期,當前身高 (cm),體重 (kg),收縮壓,舒張壓,體溫 (°C)\n"; 
+            myLogs.forEach(l => { 
+                csvContent += `${l.timestamp},${getWeekdayStr(l.timestamp)},${userHeight},${l.weight || ''},${l.sys || ''},${l.dia || ''},${l.temp}\n`; 
+            }); 
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); 
+            const link = document.createElement("a"); 
+            link.href = URL.createObjectURL(blob); 
+            link.download = `健康數據表_${currentUser}.csv`; 
+            link.click(); 
+        }
+        
+        function handleLogout() { 
+            currentUser = null; 
+            userHeight = "";
+            isRegisterMode = true; 
+            document.getElementById('authSection').className = 'max-w-md mx-auto my-12 bg-white rounded-3xl shadow-xl p-8 border border-slate-100'; 
+            document.getElementById('mainDashboard').className = 'hidden'; 
+            document.getElementById('authName').value = ''; 
+            document.getElementById('authPassword').value = ''; 
+            document.getElementById('authHeight').value = '';
+            document.getElementById('authTitle').innerText = "📝 建立健康帳戶"; 
+            document.getElementById('authPrimaryBtn').innerText = "確認註冊帳號"; 
+            document.getElementById('authHeightField').style.display = "block";
+        }
+    </script>
+</body>
+</html>            border-bottom: 1px solid rgba(241, 245, 249, 0.5);
+        }
+        .scroll-wheel-select option:checked {
+            background-color: #e6f4ea !important;
+            color: #059669;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body id="mainBody" class="bg-slate-50 min-h-screen py-6 px-4 text-base transition-all duration-200">
+
+    <div id="authSection" class="max-w-md mx-auto my-12 bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
+        <div class="text-center mb-6">
+            <h1 id="authTitle" class="text-2xl font-bold text-slate-900">📝 建立健康帳戶</h1>
+            <p id="authSubtitle" class="text-xs text-slate-500 mt-1">帳戶與數據將安全儲存於您的本機瀏覽器中</p>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">帳號</label>
+                <input type="text" id="authName" placeholder="請輸入帳號" class="w-full rounded-xl border-slate-200 border p-3 text-sm outline-none focus:border-emerald-500 bg-slate-50">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">密碼</label>
+                <input type="password" id="authPassword" placeholder="請輸入密碼" class="w-full rounded-xl border-slate-200 border p-3 text-sm outline-none focus:border-emerald-500 bg-slate-50">
+            </div>
             <button id="authPrimaryBtn" onclick="handleAuthSubmit()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-700 shadow-md transition-all text-sm mt-2">確認註冊帳號</button>
             <div class="text-center text-xs text-slate-500 mt-4">
                 <span id="authSwitchText">已經有帳號了？</span>
