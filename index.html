@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>hihihiimdoris 雲端健康日誌 (終極防卡死版)</title>
+    <title>hihihiimdoris 雲端健康日誌 (大 Boss 終極版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -202,7 +202,10 @@
     </div>
 
     <script>
-        // 🌟 核心防護：直接填入強制雙重備援網址，避免瀏覽器因找不到資料庫而卡死按鈕
+        let database = null;
+        let isFirebaseAvailable = false;
+
+        // 🎯 這裡已經綁定妳專屬的資料庫 URL 囉！
         const firebaseConfig = {
             apiKey: "AIzaSyCERuzuN4FE14Tb54xE-FQUdbcVRVZ9jts",
             authDomain: "health-log-6bdc7.firebaseapp.com",
@@ -211,17 +214,18 @@
             messagingSenderId: "13112727574",
             appId: "1:13112727574:web:f1c32e3b1f4af5d526fd37",
             measurementId: "G-NVX7N1S4YY",
-            // 💡 直接強制指派最有可能的亞洲及預設路徑，防止沒填網址導致 JavaScript 崩潰
-            databaseURL: "https://health-log-6bdc7-default-rtdb.asia-southeast1.firebasedatabase.app/"
+            databaseURL: "https://health-log-6bdc7-default-rtdb.firebaseio.com/"
         };
         
-        // 初始化 Firebase
         try {
             firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+            isFirebaseAvailable = true;
+            console.log("Firebase 專屬雲端管道連接完畢！");
         } catch (e) {
-            console.error("Firebase 初始化失敗，改用預設節點", e);
+            console.error("Firebase 初始化攔截：", e);
+            isFirebaseAvailable = false;
         }
-        let database = firebase.database();
 
         const ADMIN_USERNAME = "admin";
         const ADMIN_PASSWORD = "8888";
@@ -231,11 +235,11 @@
         let myLogs = []; 
         let healthChart = null; 
         let isTempOnly = false; 
-        let isRegisterMode = false; // 預設為登入畫面
+        let isRegisterMode = false; 
         let forceMobileLayout = false;
         let isAdminViewing = false; 
 
-        // 初始化滾軸時間
+        // 初始化日期時間選擇器
         const now = new Date();
         const currentYear = now.getFullYear();
         
@@ -274,7 +278,6 @@
             return weekdays[d.getDay()] || "";
         }
 
-        // 🔄 登入與註冊按鈕點擊切換功能 (已完全修復，絕不卡死)
         function toggleAuthMode() { 
             isRegisterMode = !isRegisterMode; 
             document.getElementById('authTitle').innerText = isRegisterMode ? "📝 建立健康帳戶" : "🔐 登入系統"; 
@@ -284,54 +287,22 @@
             document.getElementById('authHeightField').style.display = isRegisterMode ? "block" : "none";
         }
 
-        function toggleLayoutMode() {
-            forceMobileLayout = !forceMobileLayout;
-            const gridLayout = document.getElementById('gridLayout');
-            const dataArea = document.getElementById('dataDisplayArea');
-            const toggleBtn = document.getElementById('layoutToggleBtn');
-            
-            if (forceMobileLayout) {
-                gridLayout.className = "flex flex-col gap-6";
-                dataArea.className = "space-y-6 w-full";
-                toggleBtn.innerText = "🖥️ 切換至電腦寬螢幕模式";
-            } else {
-                gridLayout.className = "grid grid-cols-1 lg:grid-cols-3 gap-6";
-                dataArea.className = "lg:col-span-2 space-y-6";
-                toggleBtn.innerText = "📱 切換至手機單欄模式";
+        function checkFirebaseStatus() {
+            if (!isFirebaseAvailable || !database) {
+                alert("❌ 雲端服務尚未完全啟動！\n\n請前往 Firebase 檢查 Realtime Database 是否已點擊「建立資料庫」，且 Rules 規則已發布為 true 喔！");
+                return false;
             }
+            return true;
         }
 
-        function changeFontSize(sizeClass) {
-            const body = document.getElementById('mainBody');
-            body.className = body.className.replace(/text-(sm|base|lg)/g, sizeClass);
-            
-            const sizes = ['text-sm', 'text-base', 'text-lg'];
-            sizes.forEach(s => {
-                const btn = document.getElementById(`fontSize-${s.replace('text-', '')}`);
-                btn.className = (s === sizeClass) ? "px-3 py-1 rounded-lg bg-white text-emerald-600 shadow-sm" : "px-3 py-1 rounded-lg text-slate-500";
-            });
-        }
-
-        function updateUserHeight(newVal) {
-            if(isAdminViewing || !newVal || isNaN(newVal) || !currentUser) return;
-            userHeight = parseFloat(newVal);
-            database.ref('users/' + currentUser).update({ height: userHeight }).catch(err => tryAlternativeURL(() => updateUserHeight(newVal)));
-        }
-
-        // 🚨 萬一真的沒開資料庫或網址錯了，點擊確認時會自動跳出提示，而不會沒反應
-        function tryAlternativeURL(callback) {
-            console.log("嘗試切換資料庫節點...");
-            database = firebase.app().database("https://health-log-6bdc7-default-rtdb.firebaseio.com/");
-            if(callback) callback();
-        }
-
-        // 🔑 按鈕送出功能
+        // 🔑 驗證送出
         function handleAuthSubmit() { 
             const name = document.getElementById('authName').value.trim(); 
             const password = document.getElementById('authPassword').value.trim(); 
             if (!name || !password) return alert('帳號與密碼皆為必填！'); 
             
             if (!isRegisterMode && name === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+                if(!checkFirebaseStatus()) return;
                 alert('👑 跨裝置雲端管理員大 Boss，歡迎回來！');
                 enterAdminDashboard();
                 return;
@@ -342,6 +313,8 @@
                 const height = document.getElementById('authHeight').value.trim();
                 if (!height) return alert('註冊時請輸入您的身高喔！');
                 
+                if(!checkFirebaseStatus()) return;
+
                 database.ref('users/' + name).once('value').then(function(snapshot) {
                     if (snapshot.exists()) {
                         alert('此帳號已被註冊！換個名字試試看喔。');
@@ -357,27 +330,25 @@
                             enterDashboard();
                         });
                     }
-                }).catch(err => {
-                    tryAlternativeURL(handleAuthSubmit);
-                });
+                }).catch(err => alert("⚠️ 資料庫拒絕連線！請去 Firebase 的 Realtime Database 裡將 Rules(規則) 的 false 改成 true 並點擊發布。"));
             } else { 
+                if(!checkFirebaseStatus()) return;
+
                 database.ref('users/' + name).once('value').then(function(snapshot) {
                     if (!snapshot.exists()) {
-                        alert('帳號不存在或密碼錯誤！請先確保您已在「前往註冊」建立帳號，且 Firebase 啟用正常。');
+                        alert('帳號不存在！請點下方「前往註冊」先建立新帳號喔！');
                         return;
                     }
                     const userData = snapshot.val();
                     if (userData.password !== password) {
-                        alert('帳號或密碼錯誤！');
+                        alert('密碼錯誤！');
                         return;
                     }
                     currentUser = name; 
                     userHeight = userData.height || 160; 
                     isAdminViewing = false;
                     enterDashboard(); 
-                }).catch(err => {
-                    tryAlternativeURL(handleAuthSubmit);
-                });
+                }).catch(err => alert("⚠️ 資料庫讀取失敗！請去 Firebase 的 Realtime Database 裡將 Rules(規則) 的 false 改成 true 并點擊發布。"));
             } 
         }
 
@@ -408,20 +379,16 @@
                         </td>
                     </tr>`;
                 }).join('');
-            }).catch(err => {
-                tryAlternativeURL(renderAdminUserList);
             });
         }
 
         function adminDeleteUserAccount(targetUser) {
-            if (confirm(`⚠️ 警告：您確定要徹底刪除使用者「${targetUser}」嗎？\n這將會永久清除其帳密、身高及所有健康紀錄，刪除後無法復原！`)) {
+            if (confirm(`⚠️ 警告：您確定要徹底刪除使用者「${targetUser}」嗎？\n這將會永久清除其所有健康紀錄！`)) {
                 database.ref('users/' + targetUser).remove().then(() => {
                     database.ref('logs/' + targetUser).remove().then(() => {
-                        alert(`🎉 已成功將使用者「${targetUser}」從雲端中永久抹除！`);
+                        alert(`🎉 已成功將使用者「${targetUser}」永久抹除！`);
                         renderAdminUserList();
                     });
-                }).catch(err => {
-                    tryAlternativeURL(() => adminDeleteUserAccount(targetUser));
                 });
             }
         }
@@ -508,13 +475,13 @@
                 document.getElementById('dia').value = ''; 
                 document.getElementById('temp').value = '';
                 document.getElementById('weight').value = '';
-            }).catch(err => tryAlternativeURL(() => saveRecord()));
+            });
         }
 
         function deleteLog(id) { 
             if(isAdminViewing) return;
             if (confirm('確定要從雲端永久刪除這筆紀錄嗎？')) { 
-                database.ref('logs/' + currentUser + '/' + id).remove().catch(err => tryAlternativeURL(() => deleteLog(id)));
+                database.ref('logs/' + currentUser + '/' + id).remove();
             } 
         }
         
@@ -568,6 +535,32 @@
             }); 
         }
         
+        function toggleLayoutMode() {
+            forceMobileLayout = !forceMobileLayout;
+            const gridLayout = document.getElementById('gridLayout');
+            const dataArea = document.getElementById('dataDisplayArea');
+            const toggleBtn = document.getElementById('layoutToggleBtn');
+            if (forceMobileLayout) {
+                gridLayout.className = "flex flex-col gap-6";
+                dataArea.className = "space-y-6 w-full";
+                toggleBtn.innerText = "🖥️ 切換至電腦寬螢幕模式";
+            } else {
+                gridLayout.className = "grid grid-cols-1 lg:grid-cols-3 gap-6";
+                dataArea.className = "lg:col-span-2 space-y-6";
+                toggleBtn.innerText = "📱 切換至手機單欄模式";
+            }
+        }
+
+        function changeFontSize(sizeClass) {
+            const body = document.getElementById('mainBody');
+            body.className = body.className.replace(/text-(sm|base|lg)/g, sizeClass);
+            const sizes = ['text-sm', 'text-base', 'text-lg'];
+            sizes.forEach(s => {
+                const btn = document.getElementById(`fontSize-${s.replace('text-', '')}`);
+                btn.className = (s === sizeClass) ? "px-3 py-1 rounded-lg bg-white text-emerald-600 shadow-sm" : "px-3 py-1 rounded-lg text-slate-500";
+            });
+        }
+
         function exportToCSV() { 
             if (myLogs.length === 0) return alert("目前還沒有數據可以產生報表喔！"); 
             let csvContent = "\uFEFF時間,星期,當前身高 (cm),體重 (kg),收縮壓,舒張壓,體溫 (°C)\n"; 
@@ -582,7 +575,7 @@
         }
         
         function handleLogout() { 
-            if(currentUser) { database.ref('logs/' + currentUser).off(); }
+            if(currentUser && database) { database.ref('logs/' + currentUser).off(); }
             currentUser = null; userHeight = ""; isRegisterMode = false; isAdminViewing = false;
             document.getElementById('adminDashboard').classList.add('hidden');
             document.getElementById('mainDashboard').className = 'hidden'; 
