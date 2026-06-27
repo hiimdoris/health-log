@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>hihihiimdoris 雲端健康日誌 (免網址自動連線版)</title>
+    <title>hihihiimdoris 雲端健康日誌 (大 Boss 權限版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -48,7 +48,7 @@
 
     <div id="authSection" class="max-w-md mx-auto my-12 bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
         <div class="text-center mb-6">
-            <h1 id="authTitle" class="text-2xl font-bold text-slate-900">📝 建立健康帳戶</h1>
+            <h1 id="authTitle" class="text-2xl font-bold text-slate-900">🔐 登入系統</h1>
             <p id="authSubtitle" class="text-xs text-slate-500 mt-1">帳戶與數據將即時同步至 Firebase 雲端資料庫</p>
         </div>
         <div class="space-y-4">
@@ -60,14 +60,14 @@
                 <label class="block text-xs font-bold text-slate-400 mb-1">密碼</label>
                 <input type="password" id="authPassword" placeholder="請輸入密碼" class="w-full rounded-xl border-slate-200 border p-3 text-sm outline-none focus:border-emerald-500 bg-slate-50">
             </div>
-            <div id="authHeightField">
+            <div id="authHeightField" style="display: none;">
                 <label class="block text-xs font-bold text-slate-400 mb-1">初始身高 (cm)</label>
                 <input type="number" id="authHeight" step="0.1" placeholder="請輸入身高（公分）" class="w-full rounded-xl border-slate-200 border p-3 text-sm outline-none focus:border-emerald-500 bg-slate-50">
             </div>
-            <button id="authPrimaryBtn" onclick="handleAuthSubmit()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-700 shadow-md transition-all text-sm mt-2">確認註冊帳號</button>
+            <button id="authPrimaryBtn" onclick="handleAuthSubmit()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-700 shadow-md transition-all text-sm mt-2">安全登入系統</button>
             <div class="text-center text-xs text-slate-500 mt-4">
-                <span id="authSwitchText">已經有帳號了？</span>
-                <button onclick="toggleAuthMode()" id="authSwitchBtn" class="text-emerald-600 font-bold underline ml-1">前往登入</button>
+                <span id="authSwitchText">還沒有帳號嗎？</span>
+                <button onclick="toggleAuthMode()" id="authSwitchBtn" class="text-emerald-600 font-bold underline ml-1">前往註冊</button>
             </div>
         </div>
     </div>
@@ -214,7 +214,7 @@
     </div>
 
     <script>
-        // 🌟 妳的 Firebase 初始化設定（已加入「自動化抓取 Realtime Database」升級黑科技）
+        // 🌟 妳的 Firebase 初始化設定
         const firebaseConfig = {
             apiKey: "AIzaSyCERuzuN4FE14Tb54xE-FQUdbcVRVZ9jts",
             authDomain: "health-log-6bdc7.firebaseapp.com",
@@ -225,7 +225,6 @@
             measurementId: "G-NVX7N1S4YY"
         };
         
-        // 🛠️ 自動補完黑科技：如果沒給 databaseURL，透過 API 自動向 Firebase 註冊伺服器要正確的跨國網址
         if (!firebaseConfig.databaseURL) {
             firebaseConfig.databaseURL = `https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com/`;
         }
@@ -242,7 +241,7 @@
         let myLogs = []; 
         let healthChart = null; 
         let isTempOnly = false; 
-        let isRegisterMode = true; 
+        let isRegisterMode = false; // 預設為登入畫面
         let forceMobileLayout = false;
         let isAdminViewing = false; 
 
@@ -330,299 +329,12 @@
             }).catch(err => handleDatabaseUrlError(err));
         }
 
-        // 🚨 萬一發生因跨國區域導致的連線網址失效，自動啟動第二層海外備份路徑修復機制
         function handleDatabaseUrlError(error) {
             if (error && error.message && error.message.indexOf("databaseURL") !== -1) {
-                console.log("偵測到海外節點，正在啟動多雲路徑代理重定向...");
                 database = firebase.app().database(`https://${firebaseConfig.projectId}-default-rtdb.asia-southeast1.firebasedatabase.app/`);
                 alert("正在切換至亞洲雲端高速節點，請再按一次剛才的操作喔！");
             }
         }
 
-        // 🔑 雲端帳密驗證
-        function handleAuthSubmit() { 
-            const name = document.getElementById('authName').value.trim(); 
-            const password = document.getElementById('authPassword').value.trim(); 
-            if (!name || !password) return alert('帳號與密碼皆為必填！'); 
-            
-            if (!isRegisterMode && name === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-                alert('👑 跨裝置雲端管理員大 Boss，歡迎回來！');
-                enterAdminDashboard();
-                return;
-            }
-
-            if (isRegisterMode) { 
-                if (name === ADMIN_USERNAME) return alert('此保留帳號不可註冊！');
-                const height = document.getElementById('authHeight').value.trim();
-                if (!height) return alert('註冊時請輸入您的身高喔！');
-                
-                database.ref('users/' + name).once('value', function(snapshot) {
-                    if (snapshot.exists()) {
-                        alert('此帳號已被註冊！換個名字試試看喔。');
-                    } else {
-                        database.ref('users/' + name).set({
-                            password: password,
-                            height: parseFloat(height)
-                        }).then(() => {
-                            currentUser = name;
-                            userHeight = parseFloat(height);
-                            isAdminViewing = false;
-                            alert('雲端帳戶建立成功！直接幫您跳轉至健康控制台 🎉'); 
-                            enterDashboard();
-                        }).catch(err => {
-                            // 攔截海外新加坡/台灣資料庫地區報錯，自動切換至亞洲伺服器
-                            database = firebase.app().database(`https://${firebaseConfig.projectId}-default-rtdb.asia-southeast1.firebasedatabase.app/`);
-                            handleAuthSubmit();
-                        });
-                    }
-                }).catch(err => {
-                    database = firebase.app().database(`https://${firebaseConfig.projectId}-default-rtdb.asia-southeast1.firebasedatabase.app/`);
-                    handleAuthSubmit();
-                });
-            } else { 
-                database.ref('users/' + name).once('value', function(snapshot) {
-                    if (!snapshot.exists()) {
-                        alert('帳號或密碼錯誤！');
-                        return;
-                    }
-                    const userData = snapshot.val();
-                    if (userData.password !== password) {
-                        alert('帳號或密碼錯誤！');
-                        return;
-                    }
-                    currentUser = name; 
-                    userHeight = userData.height || 160; 
-                    isAdminViewing = false;
-                    enterDashboard(); 
-                }).catch(err => {
-                    database = firebase.app().database(`https://${firebaseConfig.projectId}-default-rtdb.asia-southeast1.firebasedatabase.app/`);
-                    handleAuthSubmit();
-                });
-            } 
-        }
-
-        function enterAdminDashboard() {
-            document.getElementById('authSection').style.display = 'none';
-            document.getElementById('adminDashboard').classList.remove('hidden');
-            renderAdminUserList();
-        }
-
-        function renderAdminUserList() {
-            const tbody = document.getElementById('adminUserTableBody');
-            
-            database.ref('users').once('value', function(snapshot) {
-                const users = snapshot.val();
-                if (!users || Object.keys(users).length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400 text-xs">目前雲端上還沒有任何常規用戶註冊喔</td></tr>`;
-                    return;
-                }
-
-                tbody.innerHTML = Object.keys(users).map(name => {
-                    const userData = users[name];
-                    return `
-                    <tr class="hover:bg-slate-50 transition-all">
-                        <td class="p-3 font-bold text-slate-700">👤 ${name}</td>
-                        <td class="p-3 font-mono text-slate-500">${userData.password}</td>
-                        <td class="p-3 font-medium text-slate-600">${userData.height || '--'} cm</td>
-                        <td class="p-3 text-center">
-                            <button onclick="adminViewUserLogs('${name}', '${userData.height || 160}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1.5 rounded-lg font-bold text-xs transition-all">👁️ 查看日誌與圖表</button>
-                        </td>
-                    </tr>`;
-                }).join('');
-            }).catch(err => {
-                database = firebase.app().database(`https://${firebaseConfig.projectId}-default-rtdb.asia-southeast1.firebasedatabase.app/`);
-                renderAdminUserList();
-            });
-        }
-
-        function adminViewUserLogs(targetUser, targetHeight) {
-            currentUser = targetUser;
-            userHeight = targetHeight;
-            isAdminViewing = true; 
-
-            document.getElementById('adminDashboard').classList.add('hidden');
-            
-            document.getElementById('inputFormBlock').style.display = 'none';
-            document.getElementById('gridLayout').className = "flex flex-col gap-6"; 
-            document.getElementById('dashboardHeightInput').disabled = true;
-            document.getElementById('adminBackBtn').classList.remove('hidden');
-            document.getElementById('adminViewingBadge').classList.remove('hidden');
-            document.getElementById('thAction').style.display = 'none'; 
-
-            enterDashboard();
-        }
-
-        function returnToAdminHome() {
-            document.getElementById('mainDashboard').className = 'hidden';
-            enterAdminDashboard();
-        }
-
-        function enterDashboard() { 
-            document.getElementById('userNameDisplay').innerText = currentUser; 
-            document.getElementById('dashboardHeightInput').value = userHeight; 
-            document.getElementById('authSection').style.display = 'none'; 
-            document.getElementById('mainDashboard').className = 'max-w-6xl mx-auto space-y-6'; 
-            fetchCloudData(); 
-        }
-
-        function fetchCloudData() { 
-            database.ref('logs/' + currentUser).on('value', function(snapshot) {
-                const data = snapshot.val();
-                myLogs = [];
-                if (data) {
-                    myLogs = Object.keys(data).map(key => data[key]);
-                }
-                myLogs.sort((a,b) => new Date(b.timestamp.replace(/-/g, '/')) - new Date(a.timestamp.replace(/-/g, '/'))); 
-                updateTable(); 
-                renderChart(); 
-            });
-        }
-        
-        function setMode(tempOnly) { 
-            if(isAdminViewing) return;
-            isTempOnly = tempOnly; 
-            document.getElementById('modeFull').className = tempOnly ? "text-slate-500 py-2 rounded-lg" : "bg-white text-emerald-600 py-2 rounded-lg shadow-sm"; 
-            document.getElementById('modeTempOnly').className = tempOnly ? "bg-white text-emerald-600 py-2 rounded-lg shadow-sm" : "text-slate-500 py-2 rounded-lg"; 
-            
-            const bpFields = document.getElementById('bpFields');
-            const metricsFields = document.getElementById('bodyMetricsFields');
-            bpFields.style.opacity = tempOnly ? "0.3" : "1"; 
-            bpFields.style.pointerEvents = tempOnly ? "none" : "auto"; 
-            metricsFields.style.opacity = tempOnly ? "0.3" : "1"; 
-            metricsFields.style.pointerEvents = tempOnly ? "none" : "auto"; 
-        }
-        
-        function saveRecord() {
-            if(isAdminViewing) return;
-            const sys = document.getElementById('sys').value;
-            const dia = document.getElementById('dia').value;
-            const temp = document.getElementById('temp').value;
-            const weight = document.getElementById('weight').value;
-            
-            const y = yearSelect.value;
-            const m = monthSelect.value.padStart(2, '0');
-            const d = document.getElementById('scrollDay').value.padStart(2, '0');
-            const hh = hourSelect.value.padStart(2, '0');
-            const mm = minSelect.value.padStart(2, '0');
-
-            if (!temp) return alert("體溫是必填的喔！");
-
-            const logId = Date.now().toString();
-            const newLog = {
-                id: logId, 
-                timestamp: `${y}-${m}-${d} ${hh}:${mm}`,
-                weight: isTempOnly ? null : (weight ? parseFloat(weight) : null),
-                sys: isTempOnly ? null : (sys ? parseInt(sys) : null),
-                dia: isTempOnly ? null : (dia ? parseInt(dia) : null),
-                temp: parseFloat(temp)
-            };
-
-            database.ref('logs/' + currentUser + '/' + logId).set(newLog).then(() => {
-                alert("數據已成功上傳至雲端！");
-                document.getElementById('sys').value = ''; 
-                document.getElementById('dia').value = ''; 
-                document.getElementById('temp').value = '';
-                document.getElementById('weight').value = '';
-            }).catch(err => handleDatabaseUrlError(err));
-        }
-
-        function deleteLog(id) { 
-            if(isAdminViewing) return;
-            if (confirm('確定要從雲端永久刪除這筆紀錄嗎？')) { 
-                database.ref('logs/' + currentUser + '/' + id).remove().catch(err => handleDatabaseUrlError(err));
-            } 
-        }
-        
-        function updateTable() {
-            const tbody = document.getElementById('logTableBody');
-            if (myLogs.length === 0) {
-                document.getElementById('noDataText').classList.remove('hidden');
-                tbody.innerHTML = ''; return;
-            }
-            document.getElementById('noDataText').classList.add('hidden');
-            tbody.innerHTML = myLogs.map(l => {
-                const weekday = getWeekdayStr(l.timestamp);
-                const weightStr = l.weight ? `${l.weight} kg` : '--';
-                const actionTd = isAdminViewing ? '' : `<td class="p-3 text-center"><button onclick="deleteLog('${l.id}')" class="text-slate-300 hover:text-rose-500 transition-colors">刪除</button></td>`;
-                
-                return `
-                <tr class="hover:bg-slate-50 transition-all">
-                    <td class="p-3 font-mono text-xs">
-                        <div class="font-bold text-slate-700">${l.timestamp.split(' ')[0]} <span class="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] ml-1 font-sans">${weekday}</span></div>
-                        <div class="text-slate-400 mt-0.5">${l.timestamp.split(' ')[1]}</div>
-                    </td>
-                    <td class="p-3 font-medium text-slate-600">${weightStr}</td>
-                    <td class="p-3 font-bold">${l.sys ? `<span class="text-rose-500">${l.sys}</span> / <span class="text-blue-500">${l.dia}</span>` : '<span class="text-slate-300">--</span>'}</td>
-                    <td class="p-3 font-bold text-emerald-600">${l.temp} °C</td>
-                    ${actionTd}
-                </tr>`;
-            }).join('');
-        }
-
-        function renderChart() { 
-            const ctx = document.getElementById('healthChart').getContext('2d'); 
-            const chartLogs = [...myLogs].sort((a,b) => new Date(a.timestamp.replace(/-/g, '/')) - new Date(b.timestamp.replace(/-/g, '/'))); 
-            if (healthChart) healthChart.destroy(); 
-            healthChart = new Chart(ctx, { 
-                type: 'line', 
-                data: { 
-                    labels: chartLogs.map(l => l.timestamp.split(' ')[0].slice(5) + ' ' + l.timestamp.split(' ')[1]), 
-                    datasets: [ 
-                        { label: '收縮壓', data: chartLogs.map(l => l.sys), borderColor: '#ef4444', tension: 0.3, yAxisID: 'yBP', spanGaps: true }, 
-                        { label: '舒張壓', data: chartLogs.map(l => l.dia), borderColor: '#3b82f6', tension: 0.3, yAxisID: 'yBP', spanGaps: true }, 
-                        { label: '體溫', data: chartLogs.map(l => l.temp), borderColor: '#10b981', tension: 0.3, yAxisID: 'yTemp' } 
-                    ] 
-                }, 
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    scales: { 
-                        yBP: { type: 'linear', position: 'left', min: 40, max: 200 }, 
-                        yTemp: { type: 'linear', position: 'right', min: 35, max: 41, grid: { drawOnChartArea: false } } 
-                    } 
-                } 
-            }); 
-        }
-        
-        function exportToCSV() { 
-            if (myLogs.length === 0) return alert("目前還沒有數據可以產生報表喔！"); 
-            let csvContent = "\uFEFF時間,星期,當前身高 (cm),體重 (kg),收縮壓,舒張壓,體溫 (°C)\n"; 
-            myLogs.forEach(l => { 
-                csvContent += `${l.timestamp},${getWeekdayStr(l.timestamp)},${userHeight},${l.weight || ''},${l.sys || ''},${l.dia || ''},${l.temp}\n`; 
-            }); 
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); 
-            const link = document.createElement("a"); 
-            link.href = URL.createObjectURL(blob); 
-            link.download = `健康數據表_${currentUser}.csv`; 
-            link.click(); 
-        }
-        
-        function handleLogout() { 
-            if(currentUser) {
-                database.ref('logs/' + currentUser).off();
-            }
-
-            currentUser = null; 
-            userHeight = "";
-            isRegisterMode = false; 
-            isAdminViewing = false;
-
-            document.getElementById('adminDashboard').classList.add('hidden');
-            document.getElementById('mainDashboard').className = 'hidden'; 
-            document.getElementById('adminBackBtn').classList.add('hidden');
-            document.getElementById('adminViewingBadge').classList.add('hidden');
-            document.getElementById('inputFormBlock').style.display = 'block';
-            document.getElementById('dashboardHeightInput').disabled = false;
-            document.getElementById('thAction').style.display = ''; 
-            
-            document.getElementById('gridLayout').className = forceMobileLayout ? "flex flex-col gap-6" : "grid grid-cols-1 lg:grid-cols-3 gap-6";
-
-            document.getElementById('authSection').style.display = 'block'; 
-            document.getElementById('authName').value = ''; 
-            document.getElementById('authPassword').value = ''; 
-            document.getElementById('authHeight').value = '';
-            toggleAuthMode(); 
-        }
-    </script>
-</body>
-</html>
+        // 🔑 驗證登入 / 註冊
+        function
