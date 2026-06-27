@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>hihihiimdoris 雲端健康日誌 (大 Boss 權限版)</title>
+    <title>hihihiimdoris 雲端健康日誌 (按鈕修復完美版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -241,7 +241,7 @@
         let myLogs = []; 
         let healthChart = null; 
         let isTempOnly = false; 
-        let isRegisterMode = false; // 預設為登入畫面
+        let isRegisterMode = false; // 預設進來是登入畫面 (false)
         let forceMobileLayout = false;
         let isAdminViewing = false; 
 
@@ -312,6 +312,7 @@
             });
         }
 
+        // 🔄 修正後的切換邏輯
         function toggleAuthMode() { 
             isRegisterMode = !isRegisterMode; 
             document.getElementById('authTitle').innerText = isRegisterMode ? "📝 建立健康帳戶" : "🔐 登入系統"; 
@@ -336,5 +337,91 @@
             }
         }
 
-        // 🔑 驗證登入 / 註冊
-        function
+        // 🔑 驗證登入 / 註冊 (按鈕功能大復活)
+        function handleAuthSubmit() { 
+            const name = document.getElementById('authName').value.trim(); 
+            const password = document.getElementById('authPassword').value.trim(); 
+            if (!name || !password) return alert('帳號與密碼皆為必填！'); 
+            
+            // 點擊「安全登入系統」時，如果輸入的是管理員帳密
+            if (!isRegisterMode && name === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+                alert('👑 跨裝置雲端管理員大 Boss，歡迎回來！');
+                enterAdminDashboard();
+                return;
+            }
+
+            if (isRegisterMode) { 
+                if (name === ADMIN_USERNAME) return alert('此保留帳號不可註冊！');
+                const height = document.getElementById('authHeight').value.trim();
+                if (!height) return alert('註冊時請輸入您的身高喔！');
+                
+                database.ref('users/' + name).once('value', function(snapshot) {
+                    if (snapshot.exists()) {
+                        alert('此帳號已被註冊！換個名字試試看喔。');
+                    } else {
+                        database.ref('users/' + name).set({
+                            password: password,
+                            height: parseFloat(height)
+                        }).then(() => {
+                            currentUser = name;
+                            userHeight = parseFloat(height);
+                            isAdminViewing = false;
+                            alert('雲端帳戶建立成功！直接幫您跳轉至健康控制台 🎉'); 
+                            enterDashboard();
+                        }).catch(err => {
+                            database = firebase.app().database(`https://${firebaseConfig.projectId}-default-rtdb.asia-southeast1.firebasedatabase.app/`);
+                            handleAuthSubmit();
+                        });
+                    }
+                }).catch(err => {
+                    database = firebase.app().database(`https://${firebaseConfig.projectId}-default-rtdb.asia-southeast1.firebasedatabase.app/`);
+                    handleAuthSubmit();
+                });
+            } else { 
+                database.ref('users/' + name).once('value', function(snapshot) {
+                    if (!snapshot.exists()) {
+                        alert('帳號或密碼錯誤！');
+                        return;
+                    }
+                    const userData = snapshot.val();
+                    if (userData.password !== password) {
+                        alert('帳號或密碼錯誤！');
+                        return;
+                    }
+                    currentUser = name; 
+                    userHeight = userData.height || 160; 
+                    isAdminViewing = false;
+                    enterDashboard(); 
+                }).catch(err => {
+                    database = firebase.app().database(`https://${firebaseConfig.projectId}-default-rtdb.asia-southeast1.firebasedatabase.app/`);
+                    handleAuthSubmit();
+                });
+            } 
+        }
+
+        function enterAdminDashboard() {
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('adminDashboard').classList.remove('hidden');
+            renderAdminUserList();
+        }
+
+        function renderAdminUserList() {
+            const tbody = document.getElementById('adminUserTableBody');
+            
+            database.ref('users').once('value', function(snapshot) {
+                const users = snapshot.val();
+                if (!users || Object.keys(users).length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400 text-xs">目前雲端上還沒有任何常規用戶註冊喔</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = Object.keys(users).map(name => {
+                    const userData = users[name];
+                    return `
+                    <tr class="hover:bg-slate-50 transition-all">
+                        <td class="p-3 font-bold text-slate-700">👤 ${name}</td>
+                        <td class="p-3 font-mono text-slate-500">${userData.password}</td>
+                        <td class="p-3 font-medium text-slate-600">${userData.height || '--'} cm</td>
+                        <td class="p-3 text-center flex items-center justify-center gap-2 flex-wrap">
+                            <button onclick="adminViewUserLogs('${name}', '${userData.height || 160}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1.5 rounded-lg font-bold text-xs transition-all">👁️ 查看日誌與圖表</button>
+                            <button onclick="adminDeleteUserAccount('${name}')" class="bg-rose-50 text-rose-600 hover:bg-rose
